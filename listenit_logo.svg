@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0B0F19"/>
+      <stop offset="100%" stop-color="#161F36"/>
+    </linearGradient>
+    <linearGradient id="stemGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#00F2FE"/>
+      <stop offset="100%" stop-color="#4FACFE"/>
+    </linearGradient>
+    <linearGradient id="baseGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#4FACFE"/>
+      <stop offset="100%" stop-color="#8B5CF6"/>
+    </linearGradient>
+    <linearGradient id="wave1Grad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#00F2FE"/>
+      <stop offset="100%" stop-color="#6366F1"/>
+    </linearGradient>
+    <linearGradient id="wave2Grad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#8B5CF6"/>
+      <stop offset="100%" stop-color="#6366F1"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Background Circle -->
+  <circle cx="256" cy="256" r="256" fill="url(#bgGrad)"/>
+
+  <!-- Distinctive ListenIt Monogram: "L" + Acoustic Listening Waves -->
+  <!-- Vertical Stem of L -->
+  <rect x="144" y="112" width="52" height="276" rx="26" fill="url(#stemGrad)"/>
+
+  <!-- Horizontal Base of L -->
+  <rect x="144" y="336" width="246" height="52" rx="26" fill="url(#baseGrad)"/>
+
+  <!-- Acoustic Harmonic Wave 1 -->
+  <rect x="236" y="195" width="42" height="102" rx="21" fill="url(#wave1Grad)"/>
+
+  <!-- Acoustic Harmonic Wave 2 -->
+  <rect x="308" y="144" width="42" height="153" rx="21" fill="url(#wave2Grad)"/>
+
+  <!-- Listening Pulse Beacon -->
+  <circle cx="390" cy="184" r="28" fill="#00F2FE"/>
+</svg>

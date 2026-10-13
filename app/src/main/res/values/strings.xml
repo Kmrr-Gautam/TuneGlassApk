@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">TuneGlass</string>
+    <string name="widget_name">TuneGlass Player</string>
+    <string name="widget_description">Artwork, track details and playback controls for every media app</string>
+</resources>

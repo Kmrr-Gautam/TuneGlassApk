@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <external-files-path name="documents" path="Documents/" />
+    <cache-path name="shared" path="shared/" />
+    <cache-path name="updates" path="updates/" />
+    <cache-path name="cache" path="." />
+    <files-path name="internal" path="." />
+</paths>
+

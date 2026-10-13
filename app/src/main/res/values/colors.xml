@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- hsl(0, 7%, 4%): the "Lens" ink background (Md3SchemeBuilder bgL = 4),
+         evaluated at the default hue so the splash screen never flashes a
+         mismatched color. -->
+    <color name="splash_background">#FF080911</color>
+
+    <!-- TuneGlass launcher icon background: teal slate -->
+    <color name="ic_launcher_background">#FF327385</color>
+</resources>

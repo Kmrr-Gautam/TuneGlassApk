@@ -1,0 +1,180 @@
+package com.listenit.music
+
+import android.Manifest
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
+import android.os.Bundle
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
+import androidx.compose.runtime.getValue
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.listenit.music.data.repository.LastFmAuthCallbackCoordinator
+import com.listenit.music.ui.navigation.TuneGlassNavHost
+import com.listenit.music.ui.navigation.Screen
+import com.listenit.music.ui.player.PlayerHost
+import com.listenit.music.ui.theme.TuneGlassTheme
+import com.listenit.music.ui.theme.ThemeViewModel
+import dagger.hilt.android.AndroidEntryPoint
+import javax.inject.Inject
+
+// Last.fm redirects its Custom Tab to this Activity after approval.
+@AndroidEntryPoint
+class MainActivity : androidx.fragment.app.FragmentActivity() {
+
+    @Inject
+    lateinit var lastFmAuthCallback: LastFmAuthCallbackCoordinator
+
+    @Inject
+    lateinit var linkPlaybackResolver: dagger.Lazy<com.listenit.music.playback.LinkPlaybackResolver>
+
+    @Inject
+    lateinit var appRouteNavigator: dagger.Lazy<com.listenit.music.ui.navigation.AppRouteNavigator>
+
+    private val notificationPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        // Must be called before super.onCreate() and before setContent().
+        runCatching { installSplashScreen() }
+            .onFailure { android.util.Log.e(STARTUP_TAG, "Splash compatibility layer unavailable", it) }
+        super.onCreate(savedInstanceState)
+        runCatching { lastFmAuthCallback.capture(intent) }
+            .onFailure { android.util.Log.e(STARTUP_TAG, "Auth callback ignored during startup", it) }
+        handlePlaybackIntent(intent)
+        handleNavigationIntent(intent)
+        runCatching {
+            enableEdgeToEdge(
+                statusBarStyle = androidx.activity.SystemBarStyle.auto(
+                    android.graphics.Color.TRANSPARENT,
+                    android.graphics.Color.TRANSPARENT,
+                ),
+                navigationBarStyle = androidx.activity.SystemBarStyle.auto(
+                    android.graphics.Color.TRANSPARENT,
+                    android.graphics.Color.TRANSPARENT,
+                ),
+            )
+        }
+
+        setContent {
+            val themeViewModel: ThemeViewModel = hiltViewModel()
+            val themeState by themeViewModel.uiState.collectAsStateWithLifecycle()
+
+            TuneGlassTheme(themeState = themeState) {
+                val navController = rememberNavController()
+                val backStackEntry by navController.currentBackStackEntryAsState()
+                val currentRoute = backStackEntry?.destination?.route
+                val hasBottomNavigation = currentRoute == com.listenit.music.ui.navigation.Screen.MainShell.route
+                val isPlayerAllowed = currentRoute != null &&
+                    currentRoute != com.listenit.music.ui.navigation.Screen.Onboarding.route &&
+                    currentRoute != com.listenit.music.ui.navigation.Screen.Login.route &&
+                    currentRoute != com.listenit.music.ui.navigation.Screen.Splash.route
+
+                PlayerHost(
+                    hasBottomNavigation = hasBottomNavigation,
+                    isPlayerAllowed = isPlayerAllowed,
+                ) {
+                    TuneGlassNavHost(navController)
+                }
+            }
+        }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        requestHighestSupportedRefreshRate()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+            runCatching {
+                val hasAccess = androidx.core.app.NotificationManagerCompat
+                    .getEnabledListenerPackages(this)
+                    .contains(packageName)
+                if (hasAccess) {
+                    android.service.notification.NotificationListenerService.requestRebind(
+                        android.content.ComponentName(this, com.listenit.music.service.MediaScrobbleListenerService::class.java),
+                    )
+                }
+            }
+        }
+    }
+
+    /**
+     * Ask the window scheduler for the panel's fastest supported rate. This is
+     * a preference, not a forced mode: Android can still lower it for battery,
+     * thermals or a user's display setting, and 60 Hz panels remain at 60 Hz.
+     */
+    @Suppress("DEPRECATION")
+    private fun requestHighestSupportedRefreshRate() {
+        runCatching {
+            val display = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+                display ?: windowManager.defaultDisplay
+            } else {
+                windowManager.defaultDisplay
+            }
+            val currentMode = display.mode
+            val matchingModes = display.supportedModes.filter {
+                it.physicalWidth == currentMode.physicalWidth &&
+                    it.physicalHeight == currentMode.physicalHeight
+            }
+            val highestMode = matchingModes.maxByOrNull { it.refreshRate } ?: currentMode
+            val attributes = window.attributes
+            var changed = false
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && attributes.preferredDisplayModeId != highestMode.modeId) {
+                attributes.preferredDisplayModeId = highestMode.modeId
+                changed = true
+            }
+            if (attributes.preferredRefreshRate != highestMode.refreshRate) {
+                attributes.preferredRefreshRate = highestMode.refreshRate
+                changed = true
+            }
+            if (changed) {
+                window.attributes = attributes
+            }
+        }
+    }
+
+    private fun handlePlaybackIntent(intent: Intent?) {
+        if (intent?.action == android.provider.MediaStore.INTENT_ACTION_MEDIA_PLAY_FROM_SEARCH) {
+            val playbackIntent = Intent(this, com.listenit.music.playback.MusicPlaybackService::class.java)
+                .setAction(intent.action)
+            intent.extras?.let { playbackIntent.putExtras(it) }
+            androidx.core.content.ContextCompat.startForegroundService(this, playbackIntent)
+            return
+        }
+        val uri = intent?.data
+        val host = uri?.host.orEmpty().lowercase()
+        val isSupportedMusicLink = intent?.action == Intent.ACTION_VIEW &&
+            (uri?.scheme == "http" || uri?.scheme == "https") &&
+            (host == "youtube.com" || host == "www.youtube.com" ||
+                host == "m.youtube.com" || host == "music.youtube.com" || host == "youtu.be" ||
+                host == "open.spotify.com" || host == "spotify.link")
+        val hasPlaybackTarget = isSupportedMusicLink || intent?.action == Intent.ACTION_SEND
+        if (hasPlaybackTarget) {
+            runCatching { linkPlaybackResolver.get().handleIntent(intent) }
+        }
+    }
+
+    private fun handleNavigationIntent(intent: Intent?) {
+        if (intent == null) return
+        val isDownloadsTarget = intent.action == com.listenit.music.data.download.TrackDownloadManager.ACTION_VIEW_DOWNLOADS ||
+            intent.getStringExtra(com.listenit.music.data.download.TrackDownloadManager.EXTRA_NAVIGATE_TO) == Screen.Downloads.route
+        if (isDownloadsTarget) {
+            runCatching { appRouteNavigator.get().navigateTo(Screen.Downloads.route) }
+        }
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        setIntent(intent)
+        runCatching { lastFmAuthCallback.capture(intent) }
+        handlePlaybackIntent(intent)
+        handleNavigationIntent(intent)
+    }
+
+    private companion object {
+        const val STARTUP_TAG = "TuneGlassStartup"
+    }
+}
