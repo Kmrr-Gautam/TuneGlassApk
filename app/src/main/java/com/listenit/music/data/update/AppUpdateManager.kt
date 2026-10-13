@@ -78,24 +78,30 @@ class AppUpdateManager @Inject constructor(
             var resolvedReleaseUrl = "https://tuneglass.vercel.app"
             var resolvedNotes = ""
 
-            // 1. First check the official hosted website endpoint: https://tuneglass.vercel.app/version.json
-            runCatching {
-                val siteRequest = Request.Builder()
-                    .url("https://tuneglass.vercel.app/version.json")
-                    .header("Accept", "application/json")
-                    .header("User-Agent", "TuneGlass-Android")
-                    .build()
-                val siteResp = withContext(Dispatchers.IO) { okHttpClient.newCall(siteRequest).execute() }
-                if (siteResp.isSuccessful) {
-                    val body = siteResp.body?.string().orEmpty()
-                    if (body.isNotBlank() && body.trim().startsWith("{")) {
-                        val siteJson = JSONObject(body)
-                        val ver = siteJson.optString("version", siteJson.optString("versionName", ""))
-                        if (ver.isNotBlank()) {
-                            resolvedVersion = ver
-                            resolvedDownloadUrl = siteJson.optString("downloadUrl", "https://tuneglass.vercel.app/tuneglass.apk")
-                            resolvedNotes = siteJson.optString("releaseNotes", siteJson.optString("notes", ""))
-                            resolvedReleaseUrl = siteJson.optString("releaseUrl", "https://tuneglass.vercel.app")
+            // 1. Check version.json endpoints (hosted website or GitHub raw repository)
+            for (endpoint in listOf(
+                "https://tuneglass.vercel.app/version.json",
+                "https://raw.githubusercontent.com/Kmrr-Gautam/TuneGlassApk/main/version.json",
+            )) {
+                if (resolvedVersion != null) break
+                runCatching {
+                    val siteRequest = Request.Builder()
+                        .url(endpoint)
+                        .header("Accept", "application/json")
+                        .header("User-Agent", "TuneGlass-Android")
+                        .build()
+                    val siteResp = withContext(Dispatchers.IO) { okHttpClient.newCall(siteRequest).execute() }
+                    if (siteResp.isSuccessful) {
+                        val body = siteResp.body?.string().orEmpty()
+                        if (body.isNotBlank() && body.trim().startsWith("{")) {
+                            val siteJson = JSONObject(body)
+                            val ver = siteJson.optString("version", siteJson.optString("versionName", ""))
+                            if (ver.isNotBlank()) {
+                                resolvedVersion = ver
+                                resolvedDownloadUrl = siteJson.optString("downloadUrl", "https://github.com/Kmrr-Gautam/TuneGlassApk/raw/main/tuneglass.apk")
+                                resolvedNotes = siteJson.optString("releaseNotes", siteJson.optString("notes", ""))
+                                resolvedReleaseUrl = siteJson.optString("releaseUrl", "https://github.com/Kmrr-Gautam/TuneGlassApk")
+                            }
                         }
                     }
                 }
@@ -151,7 +157,7 @@ class AppUpdateManager @Inject constructor(
                     currentVersion = currentVersion,
                     releaseNotes = resolvedNotes,
                     releaseUrl = resolvedReleaseUrl,
-                    downloadUrl = resolvedDownloadUrl ?: "https://tuneglass.vercel.app/tuneglass.apk",
+                    downloadUrl = resolvedDownloadUrl ?: "https://github.com/Kmrr-Gautam/TuneGlassApk/raw/main/tuneglass.apk",
                     isDismissed = isDismissed,
                     message = if (!isSilent) {
                         if (hasNewer) "New version $cleanTag available!" else "You're on the latest version ($currentVersion)"
