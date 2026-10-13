@@ -1,6 +1,6 @@
 <div align="center">
 
-<img src="tuneglass_logo.png" alt="TuneGlass Logo" width="120" height="120" style="border-radius: 50%;" />
+<img src="TuneGlass.png" alt="TuneGlass Logo" width="120" height="120" style="border-radius: 50%;" />
 
 # TuneGlass v1.0.0
 
