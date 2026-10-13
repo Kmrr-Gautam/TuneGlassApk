@@ -16,8 +16,8 @@ All contributors are expected to adhere to the [Code of Conduct](CODE_OF_CONDUCT
 
 ### Cloning the Repository
 ```bash
-git clone https://github.com/Kmrr-Gautam/TuneGlass.git
-cd TuneGlass
+git clone https://github.com/Kmrr-Gautam/TuneGlassApk.git
+cd TuneGlassApk
 ```
 
 ### Local Configuration

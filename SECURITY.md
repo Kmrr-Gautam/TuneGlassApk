@@ -13,7 +13,7 @@ Security fixes are provided for the latest stable release of TuneGlass.
 If you discover a security vulnerability in TuneGlass, please report it privately rather than creating a public issue.
 
 ### How to Report
-* Submit a private security advisory through the GitHub repository: https://github.com/Kmrr-Gautam/TuneGlass
+* Submit a private security advisory through the GitHub repository: https://github.com/Kmrr-Gautam/TuneGlassApk
 * Include:
   * Description of the vulnerability
   * Affected versions and components

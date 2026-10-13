@@ -35,9 +35,9 @@ Designed from the ground up around **Material 3 Expressive**, TuneGlass pairs an
 
 ## <img src="https://api.iconify.design/lucide:headphones.svg?color=%23C6F100" width="20" height="20" align="center" /> Lossless Audio Streaming & Backend
 
-TuneGlass features a lossless streaming and download engine powered directly by the **[clashflac](https://github.com/ajisth69/clashflac)** backend:
+TuneGlass features a lossless streaming and download engine powered directly by the **TuneGlass Audio** backend:
 
-- <img src="https://api.iconify.design/lucide:disc.svg?color=%2300E5FF" width="16" height="16" align="center" /> **Studio Master Quality:** Stream and download bit-perfect FLAC audio up to **24-bit / 192kHz** directly via **[clashflac](https://github.com/ajisth69/clashflac)**.
+- <img src="https://api.iconify.design/lucide:disc.svg?color=%2300E5FF" width="16" height="16" align="center" /> **Studio Master Quality:** Stream and download bit-perfect FLAC audio up to **24-bit / 192kHz** directly via **TuneGlass Lossless Engine**.
 - <img src="https://api.iconify.design/lucide:zap.svg?color=%23C6F100" width="16" height="16" align="center" /> **Opus & High-Efficiency Audio:** Seamless dual-engine fallback streaming via YouTube Music Opus for exhaustive global catalog coverage.
 - <img src="https://api.iconify.design/lucide:download.svg?color=%23C6F100" width="16" height="16" align="center" /> **Full-Fidelity Offline Downloads:** One-tap downloads saved directly to your local storage (`Music/TuneGlass`), fully tagged with high-res cover art, release tags, and synchronized LRCLIB `.lrc` lyrics.
 - <img src="https://api.iconify.design/lucide:sliders.svg?color=%23C6F100" width="16" height="16" align="center" /> **Zero-Gap Playback:** Powered by AndroidX Media3 ExoPlayer with foreground audio playback and lockscreen media session controls.
@@ -64,7 +64,7 @@ TuneGlass features a lossless streaming and download engine powered directly by 
 ## <img src="https://api.iconify.design/lucide:cpu.svg?color=%23C6F100" width="20" height="20" align="center" /> Tech Stack & Architecture
 
 - **Language & Framework:** 100% Kotlin + Jetpack Compose (Material 3 Expressive)
-- **Lossless Audio Backend:** **[clashflac](https://github.com/ajisth69/clashflac)** by [Ajisth (ajisth69)](https://github.com/ajisth69)
+- **Lossless Audio Backend:** **[TuneGlass Audio](https://github.com/Kmrr-Gautam/TuneGlassApk)** by [Gautam Kumar (Kmrr-Gautam)](https://github.com/Kmrr-Gautam)
 - **Audio Engine:** AndroidX Media3 ExoPlayer + MediaSessionService + Low-Latency Oboe Native Engine
 - **Lyrics Engine:** [LRCLIB](https://lrclib.net) API + LyricsPlus + BetterLyrics
 - **Data & Intelligence:** Last.fm API, Room DB, Jetpack DataStore, Dagger Hilt
@@ -74,8 +74,8 @@ TuneGlass features a lossless streaming and download engine powered directly by 
 ## <img src="https://api.iconify.design/lucide:terminal.svg?color=%23C6F100" width="20" height="20" align="center" /> Building from Source
 
 ```bash
-git clone https://github.com/Kmrr-Gautam/TuneGlass.git
-cd TuneGlass
+git clone https://github.com/Kmrr-Gautam/TuneGlassApk.git
+cd TuneGlassApk
 ./gradlew assembleRelease
 ```
 
@@ -84,4 +84,4 @@ cd TuneGlass
 ## <img src="https://api.iconify.design/lucide:info.svg?color=%2300E5FF" width="20" height="20" align="center" /> Attribution & License
 
 TuneGlass is licensed under the [GNU General Public License v3.0](LICENSE).  
-Based on and derivative of the open-source **LastWave-Native 4.0.0** project by [Duxtami](https://github.com/duxtami) and [Ajisth](https://github.com/ajisth69).
+Developed and maintained by **[Gautam Kumar (Kmrr-Gautam)](https://github.com/Kmrr-Gautam)**.
