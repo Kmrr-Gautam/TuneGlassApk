@@ -2,22 +2,34 @@
 
 <img src="TuneGlass.png" alt="TuneGlass Logo" width="120" height="120" style="border-radius: 50%;" />
 
-# TuneGlass v1.0.0
+# TuneGlass v1.1.0
 
 **High-Resolution Lossless Music Streaming & Player with Real-Time Synced Lyrics & Smart Discovery for Android, built with Material 3 Expressive design.**
 
 <p align="center">
+  <a href="https://github.com/Kmrr-Gautam/TuneGlassApk/raw/main/tuneglass.apk">
+    <img src="https://img.shields.io/badge/Download%20APK-v1.1.0%20(Latest)-00E5FF?style=for-the-badge&logo=android&logoColor=white&labelColor=012226" alt="Download APK" />
+  </a>
+  <a href="https://github.com/Kmrr-Gautam/TuneGlassApk/releases">
+    <img src="https://img.shields.io/badge/GitHub-Releases-C6F100?style=for-the-badge&logo=github&logoColor=black&labelColor=012226" alt="GitHub Releases" />
+  </a>
   <a href="#">
     <img src="https://img.shields.io/badge/Audio-Hi--Res%20Lossless%20FLAC-00E5FF?style=for-the-badge&logo=flac&logoColor=white&labelColor=012226" alt="Hi-Res Lossless FLAC" />
   </a>
   <a href="#">
-    <img src="https://img.shields.io/badge/Version-1.0.0--native-C6F100?style=for-the-badge&labelColor=012226" alt="Version 1.0.0-native" />
+    <img src="https://img.shields.io/badge/Version-1.1.0--native-C6F100?style=for-the-badge&labelColor=012226" alt="Version 1.1.0-native" />
   </a>
   <a href="#">
     <img src="https://img.shields.io/badge/Platform-Android-3DDC84?style=for-the-badge&logo=android&logoColor=white&labelColor=2d2d2d" alt="Platform" />
   </a>
-  <a href="#">
+  <a href="LICENSE">
     <img src="https://img.shields.io/badge/License-GPL--3.0-blue?style=for-the-badge&labelColor=2d2d2d" alt="GPL 3.0 License" />
+  </a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/Kmrr-Gautam/TuneGlassApk/raw/main/tuneglass.apk">
+    <img src="https://img.shields.io/badge/%E2%AC%87%EF%B8%8F%20Direct%20Download-tuneglass.apk%20(35.8%20MB)-00E5FF?style=for-the-badge&logo=android&logoColor=white&labelColor=012226" height="40" alt="Download APK Directly" />
   </a>
 </p>
 
@@ -29,7 +41,31 @@
 
 **TuneGlass** is a native Android music streaming app engineered for audiophiles and music lovers. It delivers studio-quality **Hi-Res Lossless FLAC (up to 24-bit/192kHz)** and Opus playback, offline downloads with full embedded metadata, kinetic real-time synchronized lyrics, smart algorithmic playlist generation, and automatic scrobbling across all your devices.
 
-Designed from the ground up around **Material 3 Expressive**, TuneGlass pairs an ultra-smooth visual experience with uncompromising audio fidelity.
+---
+
+## <img src="https://api.iconify.design/lucide:arrow-down-to-line.svg?color=%2300E5FF" width="20" height="20" align="center" /> Download & Installation
+
+Get the latest standalone APK release directly from GitHub:
+
+<p align="center">
+  <a href="https://github.com/Kmrr-Gautam/TuneGlassApk/raw/main/tuneglass.apk">
+    <img src="https://img.shields.io/badge/Direct%20Download-tuneglass.apk%20(35.8%20MB)-00E5FF?style=for-the-badge&logo=android&logoColor=white&labelColor=012226" height="40" alt="Download TuneGlass APK" />
+  </a>
+  &nbsp;&nbsp;
+  <a href="https://github.com/Kmrr-Gautam/TuneGlassApk/releases">
+    <img src="https://img.shields.io/badge/All%20Releases-GitHub-C6F100?style=for-the-badge&logo=github&logoColor=black&labelColor=012226" height="40" alt="GitHub Releases" />
+  </a>
+</p>
+
+| Package | Version | Compatibility | Architecture | Direct Download | SHA-256 Checksum |
+|:---|:---:|:---:|:---:|:---:|:---:|
+| **TuneGlass APK** | **v1.1.0** (Latest) | Android 8.0+ (API 26+) | Universal (`arm64-v8a`, `armeabi-v7a`, `x86_64`) | [**📥 Download `tuneglass.apk`**](https://github.com/Kmrr-Gautam/TuneGlassApk/raw/main/tuneglass.apk) | `5547AC8090A191429C49...` |
+
+### 📲 Quick Installation Steps
+1. **Download:** Tap [**Download `tuneglass.apk`**](https://github.com/Kmrr-Gautam/TuneGlassApk/raw/main/tuneglass.apk) directly on your Android device.
+2. **Open:** Once finished, tap the notification or open it from your `Downloads` directory.
+3. **Allow Installation:** If prompted with *"For your security, your phone is not allowed to install unknown apps"*, tap **Settings** &rarr; toggle **"Allow from this source"**.
+4. **Launch & Listen:** Open **TuneGlass** to experience 24-bit bit-perfect lossless music, real-time synchronized lyrics, and zero ads!
 
 ---
 
