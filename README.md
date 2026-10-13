@@ -61,11 +61,37 @@ Get the latest standalone APK release directly from GitHub:
 |:---|:---:|:---:|:---:|:---:|:---:|
 | **TuneGlass APK** | **v1.1.0** (Latest) | Android 8.0+ (API 26+) | Universal (`arm64-v8a`, `armeabi-v7a`, `x86_64`) | [**📥 Download `tuneglass.apk`**](https://github.com/Kmrr-Gautam/TuneGlassApk/raw/main/tuneglass.apk) | `5547AC8090A191429C49...` |
 
-### 📲 Quick Installation Steps
-1. **Download:** Tap [**Download `tuneglass.apk`**](https://github.com/Kmrr-Gautam/TuneGlassApk/raw/main/tuneglass.apk) directly on your Android device.
-2. **Open:** Once finished, tap the notification or open it from your `Downloads` directory.
-3. **Allow Installation:** If prompted with *"For your security, your phone is not allowed to install unknown apps"*, tap **Settings** &rarr; toggle **"Allow from this source"**.
-4. **Launch & Listen:** Open **TuneGlass** to experience 24-bit bit-perfect lossless music, real-time synchronized lyrics, and zero ads!
+### 📲 How to Install
+1. **Download the APK:** Tap [**Download `tuneglass.apk`**](https://github.com/Kmrr-Gautam/TuneGlassApk/raw/main/tuneglass.apk) directly on your Android phone.
+2. **Open the Package:** Once downloaded, tap the file in your notification panel or navigate to your device's **Downloads / Files** folder and tap `tuneglass.apk`.
+3. **Allow Unknown Sources:** If Android prompts you with *"For your security, your phone is not allowed to install unknown apps from this source"*, tap **Settings** &rarr; toggle on **"Allow from this source"**, then tap back.
+4. **Tap Install:** Confirm installation and open **TuneGlass** for bit-perfect studio lossless audio streaming, kinetic lyrics, and 0 ads!
+
+---
+
+### 🛡️ How to Bypass Google Play Protect Warning
+
+> [!NOTE]
+> **Why does this warning appear?**  
+> **TuneGlass** is an independent open-source music player distributed directly via GitHub (outside the Google Play Store). Because it is signed with a standalone release keystore without Google tracking or proprietary Google Play billing libraries, **Google Play Protect** may display a prompt like *"App blocked by Play Protect"* or *"Unsafe app blocked"*. TuneGlass is **100% clean, ad-free, and contains zero spyware or trackers**.
+
+Follow either method below to complete installation:
+
+#### ⚡ Method 1: Instant 1-Tap In-Dialog Bypass (Recommended)
+When the Google Play Protect warning dialog appears on your screen:
+1. Tap **"More details"** (or the small downward arrow `∨` at the bottom of the card).
+2. Tap **"Install anyway"**.
+3. The app will immediately finish installing.
+
+#### ⚙️ Method 2: Disable Play Protect in Google Play Store (If Fully Blocked)
+If your device blocks installation with no "Install anyway" option:
+1. Open the **Google Play Store** app on your Android device.
+2. Tap your **Profile Picture / Avatar** in the top-right corner.
+3. Tap **Play Protect**.
+4. Tap the **⚙️ Settings Gear** icon in the top-right corner.
+5. Toggle **OFF** **"Scan apps with Play Protect"** (and tap **Turn off** to confirm).
+6. Return to your `Downloads` folder and tap `tuneglass.apk` to install cleanly.
+7. *(Optional)* Once installed, you can re-open Play Store settings and toggle scanning back **ON** whenever you like.
 
 ---
 
