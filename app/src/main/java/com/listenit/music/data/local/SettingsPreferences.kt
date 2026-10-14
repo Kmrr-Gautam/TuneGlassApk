@@ -104,6 +104,9 @@ data class MiscSettings(
     val musicBarStyle: MusicBarStyle = MusicBarStyle.LENS,
     /** When true, automatically saves tracks for offline listening upon starting playback. */
     val autoOfflineSaveEnabled: Boolean = false,
+    /** When true (default), displays album artwork as a full-bleed full screen poster in the music player.
+     *  When false, displays the album artwork normally as a square poster. */
+    val fullScreenPoster: Boolean = true,
 )
 
 /** Small dedicated prefs object for settings that don't fit ThemePreferences
@@ -133,6 +136,7 @@ class SettingsPreferences @Inject constructor(
         val ONBOARDING_COMPLETED = booleanPreferencesKey("listenit_onboarding_completed")
         val MUSIC_BAR_STYLE = stringPreferencesKey("lw_music_bar_style")
         val AUTO_OFFLINE_SAVE_ENABLED = booleanPreferencesKey("lw_auto_offline_save_enabled")
+        val FULL_SCREEN_POSTER = booleanPreferencesKey("lw_full_screen_poster")
     }
 
     val settings: Flow<MiscSettings> = dataStore.data
@@ -159,8 +163,13 @@ class SettingsPreferences @Inject constructor(
                 onboardingCompleted = p.readSafely(Keys.ONBOARDING_COMPLETED) ?: false,
                 musicBarStyle = MusicBarStyle.fromId(p.readSafely(Keys.MUSIC_BAR_STYLE)),
                 autoOfflineSaveEnabled = p.readSafely(Keys.AUTO_OFFLINE_SAVE_ENABLED) ?: false,
+                fullScreenPoster = p.readSafely(Keys.FULL_SCREEN_POSTER) ?: true,
             )
         }
+
+    suspend fun setFullScreenPoster(enabled: Boolean) {
+        dataStore.edit { it[Keys.FULL_SCREEN_POSTER] = enabled }
+    }
 
     suspend fun setDynamicNowPlaying(enabled: Boolean) {
         dataStore.edit { it[Keys.DYNAMIC_NOW_PLAYING] = enabled }

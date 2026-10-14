@@ -74,6 +74,9 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
@@ -599,6 +602,7 @@ fun PlayerHost(
                     edgeToEdge = !hasBottomNavigation,
                     backdrop = null,
                     musicBarStyle = playerSettings.musicBarStyle,
+                    fullScreenPoster = playerSettings.fullScreenPoster,
                     modifier = Modifier.align(Alignment.BottomCenter),
                 )
             }
@@ -719,6 +723,7 @@ private fun ExpandedPlayer(
         isDownloaded = isDownloaded,
         isDownloading = isDownloading,
         onDownload = { currentTrack?.let(viewModel::downloadTrack) },
+        fullScreenPoster = settings.fullScreenPoster,
     )
 }
 
@@ -778,6 +783,7 @@ private fun MiniPlayer(
     edgeToEdge: Boolean,
     backdrop: Backdrop? = LocalLiquidGlassBackdrop.current,
     musicBarStyle: MusicBarStyle = MusicBarStyle.LENS,
+    fullScreenPoster: Boolean = true,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
@@ -848,16 +854,18 @@ private fun MiniPlayer(
             Box {
                 // The cover itself, zoomed into a soft strip, is the mini player's
                 // background, so the bar always carries the current record's colour.
-                PlayerArtwork(
-                    track,
-                    Modifier.matchParentSize().graphicsLayer {
-                        scaleX = 1.8f
-                        scaleY = 1.8f
-                        alpha = 0.5f
-                    },
-                    0.dp,
-                    decodeSizePx = 160,
-                )
+                if (fullScreenPoster) {
+                    PlayerArtwork(
+                        track,
+                        Modifier.matchParentSize().graphicsLayer {
+                            scaleX = 1.8f
+                            scaleY = 1.8f
+                            alpha = 0.5f
+                        },
+                        0.dp,
+                        decodeSizePx = 160,
+                    )
+                }
                 Box(
                     Modifier.matchParentSize().background(
                         Brush.horizontalGradient(
@@ -1606,10 +1614,11 @@ private fun FullPlayer(
     isDownloaded: Boolean = false,
     isDownloading: Boolean = false,
     onDownload: () -> Unit = {},
+    fullScreenPoster: Boolean = true,
 ) {
     val track = state.current ?: return
     // Full-bleed (crop to screen) vs whole-cover (full width, cover dissolves downward).
-    var artFill by rememberSaveable { mutableStateOf(true) }
+    var artFill by remember(fullScreenPoster) { mutableStateOf(fullScreenPoster) }
     var lyricsFullscreen by remember(currentTab) { mutableStateOf(false) }
     BackHandler(enabled = lyricsFullscreen) { lyricsFullscreen = false }
     val view = LocalView.current
@@ -1766,50 +1775,65 @@ private fun FullPlayer(
             Box(Modifier.matchParentSize().liquidGlassSource(playerBackdrop)) {
                 Box(Modifier.fillMaxSize().background(plateColor))
 
-                // The cover, edge to edge, under the status bar.
-                Box(
-                    Modifier
-                        .fillMaxWidth()
-                        .height(artHeightDp)
-                        .align(Alignment.TopCenter)
-                        .graphicsLayer {
-                            scaleX = artScale
-                            scaleY = artScale
-                            translationX = shownArtworkX * 0.5f
-                        },
-                ) {
-                    LiquidCrossfadePoster(
-                        currentTrack = track,
-                        state = state,
-                        crossfadeEnabled = crossfadeEnabled,
-                        modifier = Modifier.fillMaxSize(),
-                        corner = 0.dp,
+                if (fullScreenPoster) {
+                    // The cover, edge to edge, under the status bar.
+                    Box(
+                        Modifier
+                            .fillMaxWidth()
+                            .height(artHeightDp)
+                            .align(Alignment.TopCenter)
+                            .graphicsLayer {
+                                scaleX = artScale
+                                scaleY = artScale
+                                translationX = shownArtworkX * 0.5f
+                            },
+                    ) {
+                        LiquidCrossfadePoster(
+                            currentTrack = track,
+                            state = state,
+                            crossfadeEnabled = crossfadeEnabled,
+                            modifier = Modifier.fillMaxSize(),
+                            corner = 0.dp,
+                        )
+                    }
+
+                    // Top scrim (status bar / header legibility) and the dissolve into the plate.
+                    Box(
+                        Modifier
+                            .fillMaxWidth()
+                            .height(artHeightDp)
+                            .align(Alignment.TopCenter)
+                            .background(
+                                Brush.verticalGradient(
+                                    0f to Color.Black.copy(alpha = 0.50f),
+                                    0.14f to Color.Black.copy(alpha = 0.16f),
+                                    0.28f to Color.Transparent,
+                                ),
+                            )
+                            .background(
+                                Brush.verticalGradient(
+                                    0f to Color.Transparent,
+                                    fadeStart to Color.Transparent,
+                                    fadeStart + (1f - fadeStart) * 0.45f to plateColor.copy(alpha = 0.62f),
+                                    fadeStart + (1f - fadeStart) * 0.80f to plateColor.copy(alpha = 0.94f),
+                                    1f to plateColor,
+                                ),
+                            ),
+                    )
+                } else {
+                    // Spotify-like subtle ambient background glow from the album art
+                    Box(
+                        Modifier
+                            .fillMaxSize()
+                            .background(
+                                Brush.verticalGradient(
+                                    0f to ambientColor.copy(alpha = 0.40f),
+                                    0.45f to ambientDeep.copy(alpha = 0.22f),
+                                    1f to plateColor,
+                                ),
+                            ),
                     )
                 }
-
-                // Top scrim (status bar / header legibility) and the dissolve into the plate.
-                Box(
-                    Modifier
-                        .fillMaxWidth()
-                        .height(artHeightDp)
-                        .align(Alignment.TopCenter)
-                        .background(
-                            Brush.verticalGradient(
-                                0f to Color.Black.copy(alpha = 0.50f),
-                                0.14f to Color.Black.copy(alpha = 0.16f),
-                                0.28f to Color.Transparent,
-                            ),
-                        )
-                        .background(
-                            Brush.verticalGradient(
-                                0f to Color.Transparent,
-                                fadeStart to Color.Transparent,
-                                fadeStart + (1f - fadeStart) * 0.45f to plateColor.copy(alpha = 0.62f),
-                                fadeStart + (1f - fadeStart) * 0.80f to plateColor.copy(alpha = 0.94f),
-                                1f to plateColor,
-                            ),
-                        ),
-                )
 
                 // Lyrics / Queue: a calm, deeply blurred veil of the same cover.
                 androidx.compose.animation.AnimatedVisibility(
@@ -2171,95 +2195,133 @@ private fun FullPlayer(
                         }
 
                         FullPlayerTab.NOW_PLAYING -> {
-                            // The cover is the screen; this is only the caption beneath it.
                             Column(
                                 Modifier.fillMaxSize().padding(horizontal = 24.dp).padding(bottom = 12.dp),
-                                verticalArrangement = Arrangement.Bottom,
+                                verticalArrangement = if (fullScreenPoster) Arrangement.Bottom else Arrangement.SpaceBetween,
                             ) {
-                                Row(
-                                    Modifier.fillMaxWidth(),
-                                    verticalAlignment = Alignment.Bottom,
-                                ) {
-                                    Column(Modifier.weight(1f)) {
-                                        Text(
-                                            track.title,
-                                            style = MaterialTheme.typography.headlineMedium.copy(
-                                                fontSize = 30.sp,
-                                                lineHeight = 36.sp,
-                                            ),
-                                            color = OnArt,
-                                            maxLines = 1,
-                                            modifier = Modifier.basicMarquee(iterations = Int.MAX_VALUE),
-                                        )
-                                        Spacer(Modifier.height(4.dp))
-                                        val splitArtists = remember(track.artist) {
-                                            com.listenit.music.util.ArtistHelper.splitArtists(track.artist)
-                                        }
-                                        FlowRow(
-                                            horizontalArrangement = Arrangement.spacedBy(0.dp),
-                                            verticalArrangement = Arrangement.spacedBy(2.dp),
-                                        ) {
-                                            splitArtists.forEachIndexed { index, artName ->
-                                                Text(
-                                                    text = artName,
-                                                    style = MaterialTheme.typography.titleMedium.copy(
-                                                        fontSize = 17.sp,
-                                                        fontWeight = FontWeight.Medium,
-                                                    ),
-                                                    color = OnArt.copy(alpha = 0.80f),
-                                                    modifier = Modifier
-                                                        .clickable(
-                                                            interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
-                                                            indication = null,
-                                                        ) { onOpenArtist(artName) },
+                                if (!fullScreenPoster) {
+                                    Box(
+                                        modifier = Modifier
+                                            .weight(1f)
+                                            .fillMaxWidth()
+                                            .padding(top = 8.dp, bottom = 16.dp),
+                                        contentAlignment = Alignment.Center,
+                                    ) {
+                                        Box(
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(horizontal = 6.dp)
+                                                .aspectRatio(1f)
+                                                .shadow(
+                                                    elevation = 28.dp,
+                                                    shape = RoundedCornerShape(18.dp),
+                                                    clip = false,
+                                                    spotColor = Color.Black.copy(alpha = 0.75f),
+                                                    ambientColor = Color.Black.copy(alpha = 0.50f),
                                                 )
-                                                if (index < splitArtists.lastIndex) {
+                                                .clip(RoundedCornerShape(18.dp))
+                                                .graphicsLayer {
+                                                    scaleX = artScale
+                                                    scaleY = artScale
+                                                    translationX = shownArtworkX * 0.5f
+                                                },
+                                        ) {
+                                            LiquidCrossfadePoster(
+                                                currentTrack = track,
+                                                state = state,
+                                                crossfadeEnabled = crossfadeEnabled,
+                                                modifier = Modifier.fillMaxSize(),
+                                                corner = 18.dp,
+                                            )
+                                        }
+                                    }
+                                }
+                                Column(Modifier.fillMaxWidth()) {
+                                    Row(
+                                        Modifier.fillMaxWidth(),
+                                        verticalAlignment = Alignment.Bottom,
+                                    ) {
+                                        Column(Modifier.weight(1f)) {
+                                            Text(
+                                                track.title,
+                                                style = MaterialTheme.typography.headlineMedium.copy(
+                                                    fontSize = 30.sp,
+                                                    lineHeight = 36.sp,
+                                                ),
+                                                color = OnArt,
+                                                maxLines = 1,
+                                                modifier = Modifier.basicMarquee(iterations = Int.MAX_VALUE),
+                                            )
+                                            Spacer(Modifier.height(4.dp))
+                                            val splitArtists = remember(track.artist) {
+                                                com.listenit.music.util.ArtistHelper.splitArtists(track.artist)
+                                            }
+                                            FlowRow(
+                                                horizontalArrangement = Arrangement.spacedBy(0.dp),
+                                                verticalArrangement = Arrangement.spacedBy(2.dp),
+                                            ) {
+                                                splitArtists.forEachIndexed { index, artName ->
                                                     Text(
-                                                        text = ", ",
+                                                        text = artName,
                                                         style = MaterialTheme.typography.titleMedium.copy(
                                                             fontSize = 17.sp,
-                                                            fontWeight = FontWeight.Normal,
+                                                            fontWeight = FontWeight.Medium,
                                                         ),
-                                                        color = OnArt.copy(alpha = 0.55f),
+                                                        color = OnArt.copy(alpha = 0.80f),
+                                                        modifier = Modifier
+                                                            .clickable(
+                                                                interactionSource = remember { androidx.compose.foundation.interaction.MutableInteractionSource() },
+                                                                indication = null,
+                                                            ) { onOpenArtist(artName) },
                                                     )
+                                                    if (index < splitArtists.lastIndex) {
+                                                        Text(
+                                                            text = ", ",
+                                                            style = MaterialTheme.typography.titleMedium.copy(
+                                                                fontSize = 17.sp,
+                                                                fontWeight = FontWeight.Normal,
+                                                            ),
+                                                            color = OnArt.copy(alpha = 0.55f),
+                                                        )
+                                                    }
                                                 }
                                             }
                                         }
+                                        Spacer(Modifier.width(12.dp))
+                                        LensRingButton(
+                                            icon = if (isLiked) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
+                                            contentDescription = if (isLiked) "Unlike song" else "Like song",
+                                            onClick = onToggleLiked,
+                                            size = 48.dp,
+                                            iconSize = 24.dp,
+                                            tint = OnArt,
+                                            active = isLiked,
+                                            filled = true,
+                                        )
                                     }
-                                    Spacer(Modifier.width(12.dp))
-                                    LensRingButton(
-                                        icon = if (isLiked) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
-                                        contentDescription = if (isLiked) "Unlike song" else "Like song",
-                                        onClick = onToggleLiked,
-                                        size = 48.dp,
-                                        iconSize = 24.dp,
-                                        tint = OnArt,
-                                        active = isLiked,
-                                        filled = true,
+                                    Spacer(Modifier.height(14.dp))
+                                    SeekBar(
+                                        progressState = progressState,
+                                        isPlaying = state.isPlaying,
+                                        trackKey = track.videoId ?: "${track.artist}|${track.title}",
+                                        wavyEnabled = wavySeekbarEnabled,
+                                        musicBarStyle = musicBarStyle,
+                                        crossfadeEnabled = crossfadeEnabled,
+                                        crossfadeSeconds = crossfadeSeconds,
+                                        onSeek = player::seekTo,
+                                        isTranslucent = true,
+                                    )
+                                    Spacer(Modifier.height(2.dp))
+                                    MainControls(state, player, progressState)
+                                    Spacer(Modifier.height(10.dp))
+                                    PlayerUtilityControls(
+                                        state = state,
+                                        crossfadeEnabled = crossfadeEnabled,
+                                        onToggleCrossfade = onToggleCrossfade,
+                                        onLyrics = { onTabChange(FullPlayerTab.LYRICS) },
+                                        onQueue = { onTabChange(FullPlayerTab.QUEUE) },
                                     )
                                 }
-                                Spacer(Modifier.height(14.dp))
-                                SeekBar(
-                                    progressState = progressState,
-                                    isPlaying = state.isPlaying,
-                                    trackKey = track.videoId ?: "${track.artist}|${track.title}",
-                                    wavyEnabled = wavySeekbarEnabled,
-                                    musicBarStyle = musicBarStyle,
-                                    crossfadeEnabled = crossfadeEnabled,
-                                    crossfadeSeconds = crossfadeSeconds,
-                                    onSeek = player::seekTo,
-                                    isTranslucent = true,
-                                )
-                                Spacer(Modifier.height(2.dp))
-                                MainControls(state, player, progressState)
-                                Spacer(Modifier.height(10.dp))
-                                PlayerUtilityControls(
-                                    state = state,
-                                    crossfadeEnabled = crossfadeEnabled,
-                                    onToggleCrossfade = onToggleCrossfade,
-                                    onLyrics = { onTabChange(FullPlayerTab.LYRICS) },
-                                    onQueue = { onTabChange(FullPlayerTab.QUEUE) },
-                                )
                             }
                         }
                     }

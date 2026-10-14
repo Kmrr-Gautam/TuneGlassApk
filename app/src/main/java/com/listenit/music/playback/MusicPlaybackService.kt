@@ -365,21 +365,10 @@ class MusicPlaybackService : MediaBrowserServiceCompat() {
         }
     }
 
-    private fun isAllowedMediaClient(clientPackageName: String, clientUid: Int): Boolean = runCatching {
-        // System_server sometimes proxies browse connections (notably some Android Auto ROMs); always allow it.
-        if (clientUid == android.os.Process.SYSTEM_UID || clientUid == android.os.Process.myUid()) return@runCatching true
-        // Android Auto projection & automotive packages
-        if (clientPackageName.startsWith("com.google.android.projection") ||
-            clientPackageName.startsWith("com.google.android.car") ||
-            clientPackageName.startsWith("com.google.android.apps.auto") ||
-            clientPackageName.startsWith("com.android.car") ||
-            clientPackageName.startsWith("android.car") ||
-            clientPackageName == "com.google.android.googlequicksearchbox"
-        ) return@runCatching true
-        val packages = packageManager.getPackagesForUid(clientUid)
-        if (packages.isNullOrEmpty()) return@runCatching true
-        packages.contains(clientPackageName)
-    }.getOrDefault(true)
+    private fun isAllowedMediaClient(clientPackageName: String, clientUid: Int): Boolean {
+        android.util.Log.d("MusicPlaybackService", "MediaBrowser client connecting: $clientPackageName (uid: $clientUid)")
+        return true
+    }
 
     private fun playCarMediaId(mediaId: String) {
         scope.launch {

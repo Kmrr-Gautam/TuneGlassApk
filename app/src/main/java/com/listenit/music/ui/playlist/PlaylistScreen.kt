@@ -258,10 +258,11 @@ fun PlaylistScreen(
                 },
             )
 
-            // ── Filter Pills: All | Playlists | Artists ──
+            // ── Filter Pills: All | Offline | Playlists | Artists ──
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState())
                     .padding(horizontal = 16.dp, vertical = 6.dp),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically,
@@ -293,6 +294,8 @@ fun PlaylistScreen(
                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
                                 color = if (isSelected) com.listenit.music.ui.theme.LiquidFrequency.ElectricCyan
                                         else com.listenit.music.ui.theme.LiquidFrequency.MutedLavender,
+                                maxLines = 1,
+                                softWrap = false,
                             )
                         }
                     }

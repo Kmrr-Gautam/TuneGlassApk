@@ -63,6 +63,8 @@ import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Apps
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Fullscreen
+import androidx.compose.material.icons.filled.FullscreenExit
 import androidx.compose.material.icons.filled.BubbleChart
 import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material.icons.filled.LibraryMusic
@@ -582,7 +584,18 @@ fun SettingsScreen(
 
                     item {
                         Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-                            NeonSectionHeader("Mini Player Morphism Style", Icons.Filled.GraphicEq)
+                            NeonSectionHeader("Music Bar & Poster Style", Icons.Filled.GraphicEq)
+                            SettingsToggleCard(
+                                icon = if (misc.fullScreenPoster) Icons.Filled.Fullscreen else Icons.Filled.FullscreenExit,
+                                iconContainer = MaterialTheme.colorScheme.secondaryContainer,
+                                iconTint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                title = "Full Screen Poster",
+                                subtitle = if (misc.fullScreenPoster) "Full screen poster enabled" else "Normal poster enabled",
+                                checked = misc.fullScreenPoster,
+                                onCheckedChange = viewModel::setFullScreenPoster,
+                                position = GroupPosition.SINGLE,
+                            )
+                            Spacer(Modifier.height(4.dp))
                             PlayerBarStylePicker(
                                 current = misc.musicBarStyle,
                                 onSelect = viewModel::setMusicBarStyle,

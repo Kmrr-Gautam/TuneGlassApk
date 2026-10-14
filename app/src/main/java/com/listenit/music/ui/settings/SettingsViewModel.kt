@@ -322,6 +322,9 @@ class SettingsViewModel @Inject constructor(
     fun setMusicBarStyle(style: com.listenit.music.data.local.MusicBarStyle) = launchSettingsAction("update music bar style") {
         settingsPreferences.setMusicBarStyle(style)
     }
+    fun setFullScreenPoster(enabled: Boolean) = launchSettingsAction("update full screen poster") {
+        settingsPreferences.setFullScreenPoster(enabled)
+    }
 
     // ── Experimental: 15-band equalizer ──
 
