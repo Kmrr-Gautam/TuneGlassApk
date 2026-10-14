@@ -1136,6 +1136,19 @@ class MusicPlaybackService : MediaBrowserServiceCompat() {
                 .addAction(Notification.Action.Builder(R.drawable.ic_widget_skip_next, "Next", serviceAction(ACTION_NEXT, 3)).build())
                 .addAction(Notification.Action.Builder(android.R.drawable.ic_menu_close_clear_cancel, "Stop", serviceAction(ACTION_STOP, 4)).build())
                 .setColorized(true)
+                .addExtras(
+                    Bundle().apply {
+                        // ColorOS 14+ / OxygenOS 14+ Aqua Dynamics / Live Alert (Oppo, OnePlus, Realme)
+                        putBoolean("coloros.notification.liveAlert", true)
+                        putBoolean("oppo.notification.liveAlert", true)
+                        putBoolean("oplus.notification.liveAlert", true)
+                        putString("coloros.notification.capsule_type", "music")
+                        // Vivo OriginOS / FuntouchOS Atomic Island
+                        putBoolean("vivo.notification.atomicIsland", true)
+                        // Xiaomi HyperOS Dynamic Island / Floating Window
+                        putBoolean("miui.enableFloatWindow", true)
+                    }
+                )
                 .apply {
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                         setForegroundServiceBehavior(Notification.FOREGROUND_SERVICE_IMMEDIATE)

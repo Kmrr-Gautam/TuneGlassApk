@@ -15,6 +15,11 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.only
+import androidx.compose.foundation.layout.safeDrawing
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -201,35 +206,41 @@ fun FeedScreen(
                 .fillMaxSize()
                 .adaptiveContentWidth(maxWidth = 920.dp),
         ) {
-            val frequencyMood = remember {
-                when (java.time.LocalTime.now().hour) {
-                    in 5..11 -> "Morning Harmonics"
-                    in 12..16 -> "Afternoon Current"
-                    in 17..21 -> "Evening Resonance"
-                    else -> "Late Night Frequency"
+            // ── Minimalist Aesthetic Top Bar ──
+            val displayName = state.feedData.userName?.takeIf(String::isNotBlank)
+            val fullGreeting = if (!displayName.isNullOrBlank()) "$greeting, $displayName" else greeting
+
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .windowInsetsPadding(
+                        WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
+                    )
+                    .padding(horizontal = 20.dp, vertical = 10.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Column {
+                    Text(
+                        text = fullGreeting,
+                        style = MaterialTheme.typography.titleLarge.copy(
+                            fontSize = 22.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = (-0.4).sp,
+                        ),
+                        color = Color.White,
+                    )
+                    Text(
+                        text = "TuneGlass Music",
+                        style = MaterialTheme.typography.labelSmall.copy(
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Medium,
+                            letterSpacing = 0.8.sp,
+                        ),
+                        color = Color.White.copy(alpha = 0.45f),
+                    )
                 }
             }
-
-            ExpressiveHeader(
-                title = "TuneGlass",
-                subtitle = frequencyMood,
-                actions = {
-                    Box(
-                        modifier = Modifier
-                            .size(38.dp)
-                            .clip(CircleShape)
-                            .background(com.listenit.music.ui.theme.LiquidFrequency.ElectricCyan.copy(alpha = 0.12f))
-                            .border(1.dp, com.listenit.music.ui.theme.LiquidFrequency.ElectricCyan.copy(alpha = 0.45f), CircleShape),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        com.listenit.music.ui.common.FrequencyOrb(
-                            size = 32.dp,
-                            isPlaying = playbackState.isPlaying,
-                            isAnimated = true,
-                        )
-                    }
-                }
-            )
 
             PullToRefreshBox(
                 isRefreshing = state.isRefreshing,
@@ -276,37 +287,7 @@ fun FeedScreen(
                     ),
                     verticalArrangement = Arrangement.spacedBy(24.dp),
                 ) {
-                    item(key = "greeting_header") {
-                        Column(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(horizontal = 18.dp)
-                                .padding(top = 2.dp),
-                            verticalArrangement = Arrangement.spacedBy(2.dp),
-                        ) {
-                            val displayName = state.feedData.userName?.takeIf(String::isNotBlank)
-                            val fullGreeting = if (!displayName.isNullOrBlank()) "$greeting, $displayName" else greeting
-                            Text(
-                                text = fullGreeting,
-                                style = MaterialTheme.typography.headlineMedium.copy(
-                                    fontSize = 24.sp,
-                                    fontWeight = FontWeight.ExtraBold,
-                                    letterSpacing = (-0.3).sp,
-                                ),
-                                color = com.listenit.music.ui.theme.LiquidFrequency.FrostedWhite,
-                            )
-                            if (formattedDate.isNotBlank()) {
-                                Text(
-                                    text = "$formattedDate · Live Discovery Station",
-                                    style = MaterialTheme.typography.bodyMedium.copy(
-                                        fontSize = 13.sp,
-                                        fontWeight = FontWeight.Medium,
-                                    ),
-                                    color = com.listenit.music.ui.theme.LiquidFrequency.MutedLavender,
-                                )
-                            }
-                        }
-                    }
+
 
                     item(key = "spotlight_poster") {
                         MusicPosterSlideshow(
@@ -346,20 +327,10 @@ fun FeedScreen(
 
                     if (state.feedData.quickPicks.isNotEmpty()) {
                         item(key = "quick_picks") {
-                            val seedTitle = state.recommendedSeedTitle
-                            val title = "Recommended for you"
-                            val subtitle = if (!seedTitle.isNullOrBlank()) {
-                                "Based on \"$seedTitle\" • What you listened to"
-                            } else if (state.feedData.hasYtRecommendations) {
-                                "From your listening • Refreshed for you"
-                            } else if (state.feedData.hasPersonalContent) {
-                                "Matched to your taste profile"
-                            } else {
-                                "Songs tailored to your listening"
-                            }
+                            val title = "Recommended"
                             FeedSectionHeader(
                                 title = title,
-                                subtitle = subtitle,
+                                subtitle = null,
                                 actionText = "Play all",
                                 actionIcon = Icons.Filled.PlayArrow,
                                 onActionClick = { viewModel.playTracksQueue(state.feedData.quickPicks, 0, title) },
@@ -377,8 +348,8 @@ fun FeedScreen(
 
                     item(key = "jump_back_in") {
                         FeedSectionHeader(
-                            title = "Recently played",
-                            subtitle = "Jump back in • From your listening history",
+                            title = "Recently Played",
+                            subtitle = null,
                             actionText = if (state.feedData.jumpBackIn.isNotEmpty()) "Play all" else null,
                             actionIcon = if (state.feedData.jumpBackIn.isNotEmpty()) Icons.Filled.PlayArrow else null,
                             onActionClick = if (state.feedData.jumpBackIn.isNotEmpty()) {
@@ -402,8 +373,8 @@ fun FeedScreen(
                                     .fillMaxWidth()
                                     .padding(horizontal = 16.dp, vertical = 6.dp),
                                 shape = RoundedCornerShape(20.dp),
-                                color = MaterialTheme.colorScheme.surfaceContainerLow.copy(alpha = 0.45f),
-                                border = com.listenit.music.ui.theme.LiquidFrequency.glassBorder(active = false),
+                                color = Color(0xFF141418),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.08f)),
                             ) {
                                 Row(
                                     modifier = Modifier.padding(16.dp),
@@ -412,28 +383,28 @@ fun FeedScreen(
                                 ) {
                                     Box(
                                         modifier = Modifier
-                                            .size(44.dp)
+                                            .size(40.dp)
                                             .clip(CircleShape)
-                                            .background(com.listenit.music.ui.theme.LiquidFrequency.Ultraviolet.copy(alpha = 0.2f)),
+                                            .background(Color.White.copy(alpha = 0.08f)),
                                         contentAlignment = Alignment.Center,
                                     ) {
                                         Icon(
                                             imageVector = Icons.Filled.History,
                                             contentDescription = null,
-                                            tint = com.listenit.music.ui.theme.LiquidFrequency.ElectricCyan,
-                                            modifier = Modifier.size(22.dp),
+                                            tint = Color.White.copy(alpha = 0.8f),
+                                            modifier = Modifier.size(20.dp),
                                         )
                                     }
                                     Column(modifier = Modifier.weight(1f)) {
                                         Text(
                                             text = "No recent tracks yet",
                                             style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.SemiBold),
-                                            color = com.listenit.music.ui.theme.LiquidFrequency.FrostedWhite,
+                                            color = Color.White,
                                         )
                                         Text(
-                                            text = "Songs you play will appear here for fast replay",
+                                            text = "Songs you play will appear here",
                                             style = MaterialTheme.typography.bodySmall,
-                                            color = com.listenit.music.ui.theme.LiquidFrequency.MutedLavender,
+                                            color = Color.White.copy(alpha = 0.5f),
                                         )
                                     }
                                 }
@@ -663,8 +634,8 @@ fun FeedScreen(
                     if (state.feedData.recentAlbums.isNotEmpty()) {
                         item(key = "albums_in_rotation") {
                             FeedSectionHeader(
-                                title = "Albums for you",
-                                subtitle = "Real albums from your taste — Last.fm tops + YT Music picks",
+                                title = "Featured Albums",
+                                subtitle = null,
                             )
                             FeedMediaRow(
                                 content = {
@@ -691,8 +662,8 @@ fun FeedScreen(
                     if (state.feedData.charts.isNotEmpty()) {
                         item(key = "trending_charts") {
                             FeedSectionHeader(
-                                title = "Trending now",
-                                subtitle = "Most popular right now · tap a rank to play",
+                                title = "Top Charts",
+                                subtitle = null,
                                 actionText = "Play all",
                                 actionIcon = Icons.Filled.PlayArrow,
                                 onActionClick = { viewModel.playTracksQueue(state.feedData.charts, 0, "Top Charts") },
@@ -717,8 +688,8 @@ fun FeedScreen(
                     if (state.feedData.newReleases.isNotEmpty()) {
                         item(key = "new_releases") {
                             FeedSectionHeader(
-                                title = "New releases",
-                                subtitle = "Fresh drops and new albums",
+                                title = "New Releases",
+                                subtitle = null,
                                 actionText = "See all",
                                 actionIcon = Icons.AutoMirrored.Filled.ArrowForwardIos,
                                 onActionClick = onOpenNewReleases,
@@ -749,8 +720,8 @@ fun FeedScreen(
                     if (state.feedData.friends.isNotEmpty()) {
                         item(key = "friends_activity") {
                             FeedSectionHeader(
-                                title = "Your friends",
-                                subtitle = "People in your listening circle",
+                                title = "Friends",
+                                subtitle = null,
                                 actionText = "See all",
                                 actionIcon = Icons.AutoMirrored.Filled.ArrowForwardIos,
                                 onActionClick = onOpenFriends,
@@ -1412,7 +1383,7 @@ private fun QuickTileCard(tile: FeedQuickTile, modifier: Modifier = Modifier, on
         ),
         border = androidx.compose.foundation.BorderStroke(
             1.dp,
-            MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.35f),
+            Color.White.copy(alpha = 0.08f),
         ),
         modifier = modifier
             .height(64.dp),

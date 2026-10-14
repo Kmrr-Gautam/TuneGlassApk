@@ -49,11 +49,22 @@ import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Settings
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -226,22 +237,10 @@ fun MainShell(
             }
         }
 
-        // App update prompt banner (only shown on app open when an update is available and not dismissed)
-        AnimatedVisibility(
-            visible = showUpdateBanner,
-            enter = slideInVertically(initialOffsetY = { -it }) + fadeIn(),
-            exit = slideOutVertically(targetOffsetY = { -it }) + fadeOut(),
-            modifier = Modifier
-                .align(Alignment.TopCenter)
-                .adaptiveContentWidth(maxWidth = 600.dp)
-                .statusBarsPadding()
-                .padding(horizontal = 16.dp, vertical = 8.dp)
-                .zIndex(10f),
-        ) {
-            UpdatePromptCard(
-                version = updateInfo.latestVersion,
-                isDownloading = updateInfo.isDownloading,
-                downloadProgress = updateInfo.downloadProgress,
+        // App update popup modal (automatically shown when a new update is released)
+        if (showUpdateBanner) {
+            UpdateAvailableDialog(
+                updateInfo = updateInfo,
                 onUpdate = { mainShellViewModel.downloadAndInstall(context) },
                 onDismiss = { mainShellViewModel.dismissUpdate(updateInfo.latestVersion) },
             )
@@ -259,79 +258,191 @@ fun MainShell(
 }
 
 @Composable
-private fun UpdatePromptCard(
-    version: String,
-    isDownloading: Boolean,
-    downloadProgress: Float,
+private fun UpdateAvailableDialog(
+    updateInfo: com.listenit.music.data.update.UpdateInfo,
     onUpdate: () -> Unit,
     onDismiss: () -> Unit,
 ) {
-    Surface(
-        shape = RoundedCornerShape(20.dp),
-        color = MaterialTheme.colorScheme.surfaceContainerHigh,
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.5f)),
-        shadowElevation = 0.dp,
-        tonalElevation = 0.dp,
-        modifier = Modifier.fillMaxWidth(),
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false),
     ) {
-        Row(
-            modifier = Modifier.padding(start = 12.dp, end = 8.dp, top = 10.dp, bottom = 10.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        Surface(
+            shape = RoundedCornerShape(28.dp),
+            color = Color(0xFF131318),
+            border = BorderStroke(1.dp, Color.White.copy(alpha = 0.12f)),
+            shadowElevation = 24.dp,
+            modifier = Modifier
+                .padding(horizontal = 24.dp)
+                .fillMaxWidth()
+                .wrapContentHeight(),
         ) {
-            Box(
-                Modifier
-                    .size(40.dp)
-                    .border(1.dp, MaterialTheme.colorScheme.primary.copy(alpha = 0.6f), CircleShape),
-                contentAlignment = Alignment.Center,
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.CloudDownload,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier.size(20.dp),
-                )
-            }
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = if (isDownloading) "Downloading update..." else "Update available",
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.onSurface,
-                )
-                Text(
-                    text = if (isDownloading) {
-                        "${(downloadProgress * 100).toInt()}% • Installing soon"
-                    } else {
-                        "TuneGlass v$version is ready to install"
-                    },
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
-            Surface(
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.primary,
+            Column(
                 modifier = Modifier
-                    .clip(CircleShape)
-                    .clickable(onClick = onUpdate),
+                    .padding(24.dp)
+                    .fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(16.dp),
             ) {
-                Text(
-                    text = if (isDownloading) "${(downloadProgress * 100).toInt()}%" else "Update",
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.onPrimary,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 9.dp),
-                )
-            }
-            IconButton(
-                onClick = onDismiss,
-                modifier = Modifier.size(32.dp),
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.Close,
-                    contentDescription = "Dismiss update",
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(18.dp),
-                )
+                // Top icon
+                Box(
+                    modifier = Modifier
+                        .size(56.dp)
+                        .clip(CircleShape)
+                        .background(Color.White.copy(alpha = 0.10f))
+                        .border(1.dp, Color.White.copy(alpha = 0.18f), CircleShape),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.CloudDownload,
+                        contentDescription = null,
+                        tint = Color.White,
+                        modifier = Modifier.size(28.dp),
+                    )
+                }
+
+                // Title & Version tag
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = "Update Available",
+                        style = MaterialTheme.typography.titleLarge.copy(
+                            fontSize = 20.sp,
+                            fontWeight = FontWeight.Bold,
+                        ),
+                        color = Color.White,
+                    )
+                    Spacer(Modifier.height(4.dp))
+                    Surface(
+                        shape = CircleShape,
+                        color = Color.White.copy(alpha = 0.12f),
+                    ) {
+                        Text(
+                            text = "Version ${updateInfo.latestVersion}",
+                            style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                            color = Color.White.copy(alpha = 0.9f),
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 3.dp),
+                        )
+                    }
+                }
+
+                // What's New & Bug Fixes Box
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(16.dp))
+                        .background(Color(0xFF1B1B22))
+                        .padding(14.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    Text(
+                        text = "What's New & Bug Fixes:",
+                        style = MaterialTheme.typography.labelMedium.copy(
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 12.sp,
+                        ),
+                        color = Color.White.copy(alpha = 0.7f),
+                    )
+
+                    val notes = updateInfo.releaseNotes.ifBlank {
+                        "Performance improvements, bug fixes, and new features are ready to install."
+                    }
+                    val bulletPoints = notes.split(Regex("[\n,;]"))
+                        .map { it.trim().removePrefix("-").removePrefix("•").trim() }
+                        .filter { it.isNotBlank() }
+
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .heightIn(max = 140.dp)
+                            .verticalScroll(rememberScrollState()),
+                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        if (bulletPoints.isNotEmpty()) {
+                            bulletPoints.forEach { point ->
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                    verticalAlignment = Alignment.Top,
+                                ) {
+                                    Text(
+                                        text = "•",
+                                        style = MaterialTheme.typography.bodyMedium.copy(fontWeight = FontWeight.Bold),
+                                        color = Color(0xFF22C55E),
+                                    )
+                                    Text(
+                                        text = point,
+                                        style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.5.sp),
+                                        color = Color.White.copy(alpha = 0.85f),
+                                    )
+                                }
+                            }
+                        } else {
+                            Text(
+                                text = notes,
+                                style = MaterialTheme.typography.bodySmall.copy(fontSize = 12.sp),
+                                color = Color.White.copy(alpha = 0.85f),
+                            )
+                        }
+                    }
+                }
+
+                // Downloading Progress
+                if (updateInfo.isDownloading) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalArrangement = Arrangement.spacedBy(6.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                    ) {
+                        LinearProgressIndicator(
+                            progress = { updateInfo.downloadProgress },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(6.dp)
+                                .clip(CircleShape),
+                            color = Color(0xFF22C55E),
+                            trackColor = Color.White.copy(alpha = 0.15f),
+                            strokeCap = StrokeCap.Round,
+                        )
+                        Text(
+                            text = "${(updateInfo.downloadProgress * 100).toInt()}% • Downloading update...",
+                            style = MaterialTheme.typography.labelSmall,
+                            color = Color.White.copy(alpha = 0.6f),
+                        )
+                    }
+                }
+
+                // Action buttons
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    TextButton(
+                        onClick = onDismiss,
+                        modifier = Modifier.weight(1f),
+                    ) {
+                        Text(
+                            text = "Later",
+                            style = MaterialTheme.typography.labelLarge,
+                            color = Color.White.copy(alpha = 0.6f),
+                        )
+                    }
+
+                    Button(
+                        onClick = onUpdate,
+                        shape = CircleShape,
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color.White,
+                            contentColor = Color.Black,
+                        ),
+                        modifier = Modifier.weight(1.3f),
+                    ) {
+                        Text(
+                            text = if (updateInfo.isDownloading) "Downloading..." else "Update Now",
+                            style = MaterialTheme.typography.labelLarge.copy(fontWeight = FontWeight.Bold),
+                        )
+                    }
+                }
             }
         }
     }

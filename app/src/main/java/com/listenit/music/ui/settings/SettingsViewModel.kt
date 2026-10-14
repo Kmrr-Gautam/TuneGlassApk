@@ -325,6 +325,9 @@ class SettingsViewModel @Inject constructor(
     fun setFullScreenPoster(enabled: Boolean) = launchSettingsAction("update full screen poster") {
         settingsPreferences.setFullScreenPoster(enabled)
     }
+    fun setDynamicIsland(enabled: Boolean) = launchSettingsAction("update dynamic island") {
+        settingsPreferences.setDynamicIsland(enabled)
+    }
 
     // ── Experimental: 15-band equalizer ──
 

@@ -149,6 +149,14 @@ class AppUpdateManager @Inject constructor(
             val dismissedVersion = prefs.getString("dismissed_version", null)
             val isDismissed = dismissedVersion == cleanTag
 
+            if (hasNewer && !isDismissed) {
+                val lastNotified = prefs.getString("last_notified_version", null)
+                if (lastNotified != cleanTag) {
+                    showUpdateNotification(cleanTag, resolvedNotes)
+                    prefs.edit().putString("last_notified_version", cleanTag).apply()
+                }
+            }
+
             _updateInfo.update {
                 it.copy(
                     isChecking = false,
@@ -355,5 +363,45 @@ class AppUpdateManager @Inject constructor(
             if (r < c) return false
         }
         return false
+    }
+
+    private fun showUpdateNotification(version: String, notes: String) {
+        runCatching {
+            val nm = context.getSystemService(Context.NOTIFICATION_SERVICE) as? android.app.NotificationManager ?: return
+            val channelId = "app_updates_channel"
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                val channel = android.app.NotificationChannel(
+                    channelId,
+                    "App Updates",
+                    android.app.NotificationManager.IMPORTANCE_DEFAULT,
+                ).apply {
+                    description = "Notifications for TuneGlass app updates"
+                }
+                nm.createNotificationChannel(channel)
+            }
+
+            val launchIntent = context.packageManager.getLaunchIntentForPackage(context.packageName)?.apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            }
+            val pendingIntent = android.app.PendingIntent.getActivity(
+                context,
+                2002,
+                launchIntent,
+                android.app.PendingIntent.FLAG_UPDATE_CURRENT or (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) android.app.PendingIntent.FLAG_IMMUTABLE else 0),
+            )
+
+            val cleanNotes = notes.ifBlank { "New features, performance enhancements, and bug fixes are ready to install." }
+            val notification = androidx.core.app.NotificationCompat.Builder(context, channelId)
+                .setSmallIcon(com.listenit.music.R.drawable.ic_launcher_fg_raster)
+                .setContentTitle("Update Available • TuneGlass v$version")
+                .setContentText("A new version is available. Tap to view changes and install.")
+                .setStyle(androidx.core.app.NotificationCompat.BigTextStyle().bigText("TuneGlass v$version is available!\n\n$cleanNotes"))
+                .setContentIntent(pendingIntent)
+                .setAutoCancel(true)
+                .setPriority(androidx.core.app.NotificationCompat.PRIORITY_HIGH)
+                .build()
+
+            nm.notify(1100, notification)
+        }
     }
 }

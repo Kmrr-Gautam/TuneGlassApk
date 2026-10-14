@@ -1,7 +1,7 @@
 {
-  "version": "1.1.1",
-  "versionCode": 3,
+  "version": "1.1.2",
+  "versionCode": 4,
   "downloadUrl": "https://github.com/Kmrr-Gautam/TuneGlassApk/raw/main/tuneglass.apk",
-  "releaseNotes": "Full-screen poster toggle, Spotify-style centered artwork with shadows, horizontal swipeable library filter chips, and enhanced Android Auto connectivity.",
+  "releaseNotes": "Minimalist aesthetic Homepage redesign with clean typography and zero neon clutter, Universal Dynamic Island for all devices (Samsung, OnePlus, Oppo, Vivo, Xiaomi, Pixel), and automatic in-app Update Available popup modal with What's New & Bug Fixes details.",
   "releaseUrl": "https://github.com/Kmrr-Gautam/TuneGlassApk"
 }

@@ -593,7 +593,17 @@ fun SettingsScreen(
                                 subtitle = if (misc.fullScreenPoster) "Full screen poster enabled" else "Normal poster enabled",
                                 checked = misc.fullScreenPoster,
                                 onCheckedChange = viewModel::setFullScreenPoster,
-                                position = GroupPosition.SINGLE,
+                                position = GroupPosition.TOP,
+                            )
+                            SettingsToggleCard(
+                                icon = Icons.Filled.BubbleChart,
+                                iconContainer = MaterialTheme.colorScheme.secondaryContainer,
+                                iconTint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                title = "Dynamic Island",
+                                subtitle = if (misc.dynamicIslandEnabled) "Active on supported devices when app is closed (Oppo, Vivo, OnePlus, Xiaomi, Samsung)" else "Dynamic island disabled",
+                                checked = misc.dynamicIslandEnabled,
+                                onCheckedChange = viewModel::setDynamicIsland,
+                                position = GroupPosition.BOTTOM,
                             )
                             Spacer(Modifier.height(4.dp))
                             PlayerBarStylePicker(
