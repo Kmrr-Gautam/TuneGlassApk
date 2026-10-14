@@ -20,6 +20,7 @@ import androidx.compose.material3.LocalContentColor
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import com.listenit.music.ui.common.LensGlyphButton
 import com.listenit.music.ui.common.LensRingButton
+import com.listenit.music.ui.common.LocalAppHaptics
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Downloading
 import androidx.compose.material.icons.filled.CheckCircle
@@ -791,6 +792,7 @@ private fun MiniPlayer(
     // Liquid Glass dressing for the floating mini player (no-op when the
     // experimental setting is off — see ui/theme/LiquidGlass.kt).
     val liquidGlass = LocalLiquidGlass.current
+    val appHaptics = LocalAppHaptics.current
     var dragX by remember(track.videoId, track.title) { mutableFloatStateOf(0f) }
     var dragY by remember(track.videoId, track.title) { mutableFloatStateOf(0f) }
     val shownX by animateFloatAsState(dragX, ExpressiveMotion.spatialSpring(), label = "miniPlayerX")
@@ -828,8 +830,14 @@ private fun MiniPlayer(
                         when {
                             dragY > threshold -> onClose()
                             dragY < -threshold -> onExpand()
-                            dragX < -threshold -> onNext()
-                            dragX > threshold -> onPrevious()
+                            dragX < -threshold -> {
+                                appHaptics.next()
+                                onNext()
+                            }
+                            dragX > threshold -> {
+                                appHaptics.previous()
+                                onPrevious()
+                            }
                         }
                         dragX = 0f
                         dragY = 0f
@@ -914,7 +922,10 @@ private fun MiniPlayer(
                         LensGlyphButton(
                             icon = Icons.Filled.SkipNext,
                             contentDescription = "Next",
-                            onClick = onNext,
+                            onClick = {
+                                appHaptics.next()
+                                onNext()
+                            },
                             size = 44.dp,
                             iconSize = 26.dp,
                             tint = OnArt,
@@ -1019,6 +1030,7 @@ private fun LensPlayButton(
         ),
         label = "lensPlayScale",
     )
+    val appHaptics = LocalAppHaptics.current
     val progress = progressState?.collectAsStateWithLifecycle()
 
     Box(
@@ -1059,7 +1071,10 @@ private fun LensPlayButton(
         contentAlignment = Alignment.Center,
     ) {
         Surface(
-            onClick = onClick,
+            onClick = {
+                appHaptics.playPause()
+                onClick()
+            },
             shape = CircleShape,
             color = discColor,
             contentColor = glyphColor,
@@ -2478,6 +2493,7 @@ private fun MainControls(
     player: MusicPlayer,
     progressState: StateFlow<PlaybackProgressState>,
 ) {
+    val appHaptics = LocalAppHaptics.current
     Row(
         modifier = Modifier.fillMaxWidth(),
         horizontalArrangement = Arrangement.SpaceBetween,
@@ -2486,7 +2502,10 @@ private fun MainControls(
         LensGlyphButton(
             icon = Icons.Filled.Shuffle,
             contentDescription = if (state.shuffleEnabled) "Shuffle on" else "Shuffle off",
-            onClick = player::toggleShuffle,
+            onClick = {
+                appHaptics.toggle()
+                player.toggleShuffle()
+            },
             tint = OnArt.copy(alpha = 0.72f),
             activeColor = OnArt,
             active = state.shuffleEnabled,
@@ -2495,7 +2514,10 @@ private fun MainControls(
         LensGlyphButton(
             icon = Icons.Filled.SkipPrevious,
             contentDescription = "Previous",
-            onClick = player::previous,
+            onClick = {
+                appHaptics.previous()
+                player.previous()
+            },
             tint = OnArt,
             size = 56.dp,
             iconSize = 34.dp,
@@ -2510,7 +2532,10 @@ private fun MainControls(
         LensGlyphButton(
             icon = Icons.Filled.SkipNext,
             contentDescription = "Next",
-            onClick = player::next,
+            onClick = {
+                appHaptics.next()
+                player.next()
+            },
             tint = OnArt,
             size = 56.dp,
             iconSize = 34.dp,
@@ -2522,7 +2547,10 @@ private fun MainControls(
                 Player.REPEAT_MODE_ALL -> "Repeat all"
                 else -> "Repeat off"
             },
-            onClick = player::cycleRepeatMode,
+            onClick = {
+                appHaptics.toggle()
+                player.cycleRepeatMode()
+            },
             tint = OnArt.copy(alpha = 0.72f),
             activeColor = OnArt,
             active = state.repeatMode != Player.REPEAT_MODE_OFF,
@@ -2872,6 +2900,7 @@ private fun CrossfadeControlButton(
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
+    val appHaptics = LocalAppHaptics.current
     val burstAnim = remember { androidx.compose.animation.core.Animatable(1f) }
     val scope = rememberCoroutineScope()
 
@@ -2911,6 +2940,7 @@ private fun CrossfadeControlButton(
                 indication = null,
                 role = androidx.compose.ui.semantics.Role.Button,
                 onClick = {
+                    appHaptics.toggle()
                     val nextState = !crossfadeEnabled
                     if (nextState) {
                         scope.launch {

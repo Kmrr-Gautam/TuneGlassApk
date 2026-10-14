@@ -196,19 +196,6 @@ private fun openUrl(context: Context, url: String) {
     }
 }
 
-private fun buildLastFmUrl(target: TrackMenuTarget): String {
-    return when (target) {
-        is TrackMenuTarget.Track -> if (target.url.isNotBlank()) target.url else try {
-            "https://www.last.fm/music/${java.net.URLEncoder.encode(target.artist, "UTF-8")}/_/${java.net.URLEncoder.encode(target.name, "UTF-8")}"
-        } catch (e: Exception) { "" }
-        is TrackMenuTarget.Artist -> if (target.url.isNotBlank()) target.url else try {
-            "https://www.last.fm/music/${java.net.URLEncoder.encode(target.name, "UTF-8")}"
-        } catch (e: Exception) { "" }
-        is TrackMenuTarget.Album -> if (target.url.isNotBlank()) target.url else try {
-            "https://www.last.fm/music/${java.net.URLEncoder.encode(target.artist, "UTF-8")}/${java.net.URLEncoder.encode(target.name, "UTF-8")}"
-        } catch (e: Exception) { "" }
-    }
-}
 
 /**
  * Faithful port of the shared track/artist/album 3-dot menu used across
@@ -486,7 +473,6 @@ fun TrackContextMenuSheet(
                             PlayerCastMenuRow(musicPlayer)
                         }
                     }
-                    add { pos -> MenuActionRow(Icons.Filled.Language, "Open in Last.fm", position = pos) { openUrl(context, buildLastFmUrl(target)); onDismiss() } }
                     if (onRefreshArtwork != null) {
                         add { pos -> MenuActionRow(Icons.Filled.Refresh, "Refresh Cover Art", position = pos) { onRefreshArtwork(); onDismiss() } }
                     }
@@ -522,12 +508,6 @@ fun TrackContextMenuSheet(
                             onDismiss()
                         }
                     }
-                    add { pos ->
-                        MenuActionRow(Icons.Filled.Language, "Open in Last.fm", position = pos) {
-                            openUrl(context, buildLastFmUrl(target))
-                            onDismiss()
-                        }
-                    }
                 }
                 ExpressiveGroup(rowCount = rows.size) { index, position -> rows[index](position) }
             } else if (target is TrackMenuTarget.Album) {
@@ -544,12 +524,6 @@ fun TrackContextMenuSheet(
                                 artistAlbumViewModel.openArtist(target.artist)
                                 onDismiss()
                             }
-                        }
-                    }
-                    add { pos ->
-                        MenuActionRow(Icons.Filled.Language, "Open in Last.fm", position = pos) {
-                            openUrl(context, buildLastFmUrl(target))
-                            onDismiss()
                         }
                     }
                 }

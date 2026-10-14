@@ -328,6 +328,9 @@ class SettingsViewModel @Inject constructor(
     fun setDynamicIsland(enabled: Boolean) = launchSettingsAction("update dynamic island") {
         settingsPreferences.setDynamicIsland(enabled)
     }
+    fun setHapticFeedbackEnabled(enabled: Boolean) = launchSettingsAction("update haptic tactile feedback") {
+        settingsPreferences.setHapticFeedbackEnabled(enabled)
+    }
 
     // ── Experimental: 15-band equalizer ──
 

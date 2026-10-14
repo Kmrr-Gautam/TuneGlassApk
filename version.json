@@ -1,7 +1,7 @@
 {
-  "version": "1.1.2",
-  "versionCode": 4,
+  "version": "1.1.3",
+  "versionCode": 5,
   "downloadUrl": "https://github.com/Kmrr-Gautam/TuneGlassApk/raw/main/tuneglass.apk",
-  "releaseNotes": "Minimalist aesthetic Homepage redesign with clean typography and zero neon clutter, Universal Dynamic Island for all devices (Samsung, OnePlus, Oppo, Vivo, Xiaomi, Pixel), and automatic in-app Update Available popup modal with What's New & Bug Fixes details.",
+  "releaseNotes": "Tactile haptic feedback on Play, Pause, Next, and Previous controls\nSmooth detent haptic ticks on crossfade duration bar and seekbar scrubbing\nNew Tactile Haptic Feedback toggle button in Settings (Sound & Hi-Res)\nRemoved legacy 'Open in Last.fm' options from context menus\nFluid gestures and playback stability improvements",
   "releaseUrl": "https://github.com/Kmrr-Gautam/TuneGlassApk"
 }

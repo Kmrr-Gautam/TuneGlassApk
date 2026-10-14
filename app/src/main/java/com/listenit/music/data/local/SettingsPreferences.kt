@@ -109,6 +109,8 @@ data class MiscSettings(
     val fullScreenPoster: Boolean = true,
     /** When true (default), shows a floating interactive dynamic island at the top on all Android devices. */
     val dynamicIslandEnabled: Boolean = true,
+    /** When true (default), enables rich tactile haptic feedback on playback controls, sliders, and gestures. */
+    val hapticFeedbackEnabled: Boolean = true,
 )
 
 /** Small dedicated prefs object for settings that don't fit ThemePreferences
@@ -140,6 +142,7 @@ class SettingsPreferences @Inject constructor(
         val AUTO_OFFLINE_SAVE_ENABLED = booleanPreferencesKey("lw_auto_offline_save_enabled")
         val FULL_SCREEN_POSTER = booleanPreferencesKey("lw_full_screen_poster")
         val DYNAMIC_ISLAND = booleanPreferencesKey("tuneglass_dynamic_island")
+        val HAPTIC_FEEDBACK_ENABLED = booleanPreferencesKey("lw_haptic_feedback_enabled")
     }
 
     val settings: Flow<MiscSettings> = dataStore.data
@@ -168,8 +171,13 @@ class SettingsPreferences @Inject constructor(
                 autoOfflineSaveEnabled = p.readSafely(Keys.AUTO_OFFLINE_SAVE_ENABLED) ?: false,
                 fullScreenPoster = p.readSafely(Keys.FULL_SCREEN_POSTER) ?: true,
                 dynamicIslandEnabled = p.readSafely(Keys.DYNAMIC_ISLAND) ?: true,
+                hapticFeedbackEnabled = p.readSafely(Keys.HAPTIC_FEEDBACK_ENABLED) ?: true,
             )
         }
+
+    suspend fun setHapticFeedbackEnabled(enabled: Boolean) {
+        dataStore.edit { it[Keys.HAPTIC_FEEDBACK_ENABLED] = enabled }
+    }
 
     suspend fun setDynamicIsland(enabled: Boolean) {
         dataStore.edit { it[Keys.DYNAMIC_ISLAND] = enabled }

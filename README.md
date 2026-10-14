@@ -2,13 +2,13 @@
 
 <img src="TuneGlass.png" alt="TuneGlass Logo" width="120" height="120" style="border-radius: 50%;" />
 
-# TuneGlass v1.1.2
+# TuneGlass v1.1.3
 
 **High-Resolution Lossless Music Streaming & Player with Real-Time Synced Lyrics & Smart Discovery for Android, built with Material 3 Expressive design.**
 
 <p align="center">
   <a href="https://github.com/Kmrr-Gautam/TuneGlassApk/raw/main/tuneglass.apk">
-    <img src="https://img.shields.io/badge/Download%20APK-v1.1.2%20(Latest)-00E5FF?style=for-the-badge&logo=android&logoColor=white&labelColor=012226" alt="Download APK" />
+    <img src="https://img.shields.io/badge/Download%20APK-v1.1.3%20(Latest)-00E5FF?style=for-the-badge&logo=android&logoColor=white&labelColor=012226" alt="Download APK" />
   </a>
   <a href="https://github.com/Kmrr-Gautam/TuneGlassApk/releases">
     <img src="https://img.shields.io/badge/GitHub-Releases-C6F100?style=for-the-badge&logo=github&logoColor=black&labelColor=012226" alt="GitHub Releases" />
@@ -17,7 +17,7 @@
     <img src="https://img.shields.io/badge/Audio-Hi--Res%20Lossless%20FLAC-00E5FF?style=for-the-badge&logo=flac&logoColor=white&labelColor=012226" alt="Hi-Res Lossless FLAC" />
   </a>
   <a href="#">
-    <img src="https://img.shields.io/badge/Version-1.1.2--native-C6F100?style=for-the-badge&labelColor=012226" alt="Version 1.1.2-native" />
+    <img src="https://img.shields.io/badge/Version-1.1.3--native-C6F100?style=for-the-badge&labelColor=012226" alt="Version 1.1.3-native" />
   </a>
   <a href="#">
     <img src="https://img.shields.io/badge/Platform-Android-3DDC84?style=for-the-badge&logo=android&logoColor=white&labelColor=2d2d2d" alt="Platform" />
@@ -29,7 +29,7 @@
 
 <p align="center">
   <a href="https://github.com/Kmrr-Gautam/TuneGlassApk/raw/main/tuneglass.apk">
-    <img src="https://img.shields.io/badge/%E2%AC%87%EF%B8%8F%20Direct%20Download-tuneglass.apk%20(35.8%20MB)-00E5FF?style=for-the-badge&logo=android&logoColor=white&labelColor=012226" height="40" alt="Download APK Directly" />
+    <img src="https://img.shields.io/badge/%E2%AC%87%EF%B8%8F%20Direct%20Download-tuneglass.apk%20(35.9%20MB)-00E5FF?style=for-the-badge&logo=android&logoColor=white&labelColor=012226" height="40" alt="Download APK Directly" />
   </a>
 </p>
 
@@ -49,7 +49,7 @@ Get the latest standalone APK release directly from GitHub:
 
 <p align="center">
   <a href="https://github.com/Kmrr-Gautam/TuneGlassApk/raw/main/tuneglass.apk">
-    <img src="https://img.shields.io/badge/Direct%20Download-tuneglass.apk%20(35.8%20MB)-00E5FF?style=for-the-badge&logo=android&logoColor=white&labelColor=012226" height="40" alt="Download TuneGlass APK" />
+    <img src="https://img.shields.io/badge/Direct%20Download-tuneglass.apk%20(35.9%20MB)-00E5FF?style=for-the-badge&logo=android&logoColor=white&labelColor=012226" height="40" alt="Download TuneGlass APK" />
   </a>
   &nbsp;&nbsp;
   <a href="https://github.com/Kmrr-Gautam/TuneGlassApk/releases">
@@ -59,7 +59,7 @@ Get the latest standalone APK release directly from GitHub:
 
 | Package | Version | Compatibility | Architecture | Direct Download | SHA-256 Checksum |
 |:---|:---:|:---:|:---:|:---:|:---:|
-| **TuneGlass APK** | **v1.1.2** (Latest) | Android 8.0+ (API 26+) | Universal (`arm64-v8a`, `armeabi-v7a`, `x86_64`) | [**📥 Download `tuneglass.apk`**](https://github.com/Kmrr-Gautam/TuneGlassApk/raw/main/tuneglass.apk) | `A759A5799BF24AF2546EA0EA59EF4CD51EF2C8570FBAD4A4A722FABC2F6AFDF5` |
+| **TuneGlass APK** | **v1.1.3** (Latest) | Android 8.0+ (API 26+) | Universal (`arm64-v8a`, `armeabi-v7a`, `x86_64`) | [**📥 Download `tuneglass.apk`**](https://github.com/Kmrr-Gautam/TuneGlassApk/raw/main/tuneglass.apk) | `03BEE15B304A4A360CB2B2756BA0F9B7A3949C75596D90A2FD735CC41F992013` |
 
 ### 📲 How to Install
 1. **Download the APK:** Tap [**Download `tuneglass.apk`**](https://github.com/Kmrr-Gautam/TuneGlassApk/raw/main/tuneglass.apk) directly on your Android phone.

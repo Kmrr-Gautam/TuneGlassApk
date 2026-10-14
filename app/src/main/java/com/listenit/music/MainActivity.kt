@@ -36,6 +36,9 @@ class MainActivity : androidx.fragment.app.FragmentActivity() {
     @Inject
     lateinit var appRouteNavigator: dagger.Lazy<com.listenit.music.ui.navigation.AppRouteNavigator>
 
+    @Inject
+    lateinit var settingsPreferences: com.listenit.music.data.local.SettingsPreferences
+
     private val notificationPermission = registerForActivityResult(ActivityResultContracts.RequestPermission()) { }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -63,22 +66,40 @@ class MainActivity : androidx.fragment.app.FragmentActivity() {
         setContent {
             val themeViewModel: ThemeViewModel = hiltViewModel()
             val themeState by themeViewModel.uiState.collectAsStateWithLifecycle()
+            val miscSettings by settingsPreferences.settings.collectAsStateWithLifecycle(
+                initialValue = com.listenit.music.data.local.MiscSettings()
+            )
+            val hapticEnabled = miscSettings.hapticFeedbackEnabled
+            val defaultHaptic = androidx.compose.ui.platform.LocalHapticFeedback.current
+            val view = androidx.compose.ui.platform.LocalView.current
+            val conditionalHaptic = androidx.compose.runtime.remember(defaultHaptic, hapticEnabled) {
+                com.listenit.music.ui.common.ConditionalHapticFeedback(defaultHaptic) { hapticEnabled }
+            }
+            val appHaptics = androidx.compose.runtime.remember(defaultHaptic, view, hapticEnabled) {
+                com.listenit.music.ui.common.AppHaptics(defaultHaptic, view) { hapticEnabled }
+            }
 
-            TuneGlassTheme(themeState = themeState) {
-                val navController = rememberNavController()
-                val backStackEntry by navController.currentBackStackEntryAsState()
-                val currentRoute = backStackEntry?.destination?.route
-                val hasBottomNavigation = currentRoute == com.listenit.music.ui.navigation.Screen.MainShell.route
-                val isPlayerAllowed = currentRoute != null &&
-                    currentRoute != com.listenit.music.ui.navigation.Screen.Onboarding.route &&
-                    currentRoute != com.listenit.music.ui.navigation.Screen.Login.route &&
-                    currentRoute != com.listenit.music.ui.navigation.Screen.Splash.route
+            androidx.compose.runtime.CompositionLocalProvider(
+                androidx.compose.ui.platform.LocalHapticFeedback provides conditionalHaptic,
+                com.listenit.music.ui.common.LocalAppHaptics provides appHaptics,
+                com.listenit.music.ui.common.LocalHapticFeedbackEnabled provides hapticEnabled,
+            ) {
+                TuneGlassTheme(themeState = themeState) {
+                    val navController = rememberNavController()
+                    val backStackEntry by navController.currentBackStackEntryAsState()
+                    val currentRoute = backStackEntry?.destination?.route
+                    val hasBottomNavigation = currentRoute == com.listenit.music.ui.navigation.Screen.MainShell.route
+                    val isPlayerAllowed = currentRoute != null &&
+                        currentRoute != com.listenit.music.ui.navigation.Screen.Onboarding.route &&
+                        currentRoute != com.listenit.music.ui.navigation.Screen.Login.route &&
+                        currentRoute != com.listenit.music.ui.navigation.Screen.Splash.route
 
-                PlayerHost(
-                    hasBottomNavigation = hasBottomNavigation,
-                    isPlayerAllowed = isPlayerAllowed,
-                ) {
-                    TuneGlassNavHost(navController)
+                    PlayerHost(
+                        hasBottomNavigation = hasBottomNavigation,
+                        isPlayerAllowed = isPlayerAllowed,
+                    ) {
+                        TuneGlassNavHost(navController)
+                    }
                 }
             }
         }

@@ -26,9 +26,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import com.listenit.music.ui.common.LocalAppHaptics
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.geometry.Offset
@@ -80,10 +82,12 @@ fun WavySeekBar(
     crossfadeEnabled: Boolean = false,
     crossfadeSeconds: Int = 5,
 ) {
+    val appHaptics = LocalAppHaptics.current
     val interactionSource = remember(trackKey) { MutableInteractionSource() }
     val isDragged by interactionSource.collectIsDraggedAsState()
     var isInteracting by remember(trackKey) { mutableStateOf(false) }
     var dragPositionMs by remember(trackKey) { mutableFloatStateOf(0f) }
+    var lastHapticSecond by remember(trackKey) { mutableLongStateOf(-1L) }
     val dragging = isDragged || isInteracting
 
     val boundedDurationMs = durationMs.coerceAtLeast(0L)
@@ -416,9 +420,15 @@ fun WavySeekBar(
                 onValueChange = {
                     isInteracting = true
                     dragPositionMs = it
+                    val currentSec = (it / 1000f).toLong()
+                    if (currentSec != lastHapticSecond) {
+                        lastHapticSecond = currentSec
+                        appHaptics.seekTick()
+                    }
                 },
                 onValueChangeFinished = {
                     isInteracting = false
+                    appHaptics.seekRelease()
                     onSeek(dragPositionMs.toLong().coerceIn(0L, boundedDurationMs))
                 },
                 valueRange = 0f..boundedDurationMs.coerceAtLeast(1L).toFloat(),

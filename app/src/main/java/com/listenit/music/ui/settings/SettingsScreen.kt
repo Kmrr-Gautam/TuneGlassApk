@@ -81,6 +81,7 @@ import androidx.compose.material.icons.filled.HighQuality
 import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material.icons.filled.TextFields
 import androidx.compose.material.icons.filled.VolumeUp
+import androidx.compose.material.icons.filled.Vibration
 import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.QueueMusic
@@ -447,7 +448,7 @@ fun SettingsScreen(
                                 5 -> "Standard (320 kbps MP3)"
                                 else -> "HD Stream (Opus / AAC)"
                             }
-                            SettingsGroup(rowCount = 4) { index, position ->
+                            SettingsGroup(rowCount = 5) { index, position ->
                                 when (index) {
                                     0 -> SettingsActionCard(
                                         icon = Icons.Filled.HighQuality,
@@ -495,6 +496,16 @@ fun SettingsScreen(
                                                 ).show()
                                             }
                                         },
+                                        position = position,
+                                    )
+                                    4 -> SettingsToggleCard(
+                                        icon = Icons.Filled.Vibration,
+                                        iconContainer = MaterialTheme.colorScheme.primaryContainer,
+                                        iconTint = MaterialTheme.colorScheme.onPrimaryContainer,
+                                        title = "Tactile Haptic Feedback",
+                                        subtitle = if (misc.hapticFeedbackEnabled) "Tactile vibrations on playback, seekbar & sliders" else "Haptic feedback disabled",
+                                        checked = misc.hapticFeedbackEnabled,
+                                        onCheckedChange = viewModel::setHapticFeedbackEnabled,
                                         position = position,
                                     )
                                 }
@@ -2019,7 +2030,7 @@ private fun CrossfadeDurationRow(
     onSecondsChange: (Int) -> Unit,
     position: GroupPosition = GroupPosition.SINGLE,
 ) {
-    val haptic = androidx.compose.ui.platform.LocalHapticFeedback.current
+    val appHaptics = com.listenit.music.ui.common.LocalAppHaptics.current
     var sliderValue by remember { mutableStateOf(seconds.coerceIn(1, 12).toFloat()) }
     var isDragging by remember { mutableStateOf(false) }
     LaunchedEffect(seconds) {
@@ -2078,7 +2089,7 @@ private fun CrossfadeDurationRow(
                     isDragging = true
                     val rounded = value.roundToInt().coerceIn(1, 12)
                     if (rounded.toFloat() != sliderValue) {
-                        haptic.performHapticFeedback(androidx.compose.ui.hapticfeedback.HapticFeedbackType.TextHandleMove)
+                        appHaptics.sliderTick()
                         sliderValue = rounded.toFloat()
                         onSecondsChange(rounded)
                     }
