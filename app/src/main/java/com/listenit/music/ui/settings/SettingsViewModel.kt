@@ -107,6 +107,7 @@ class SettingsViewModel @Inject constructor(
     fun openUpdate(context: android.content.Context) = appUpdateManager.openUpdate(context)
     fun downloadAndInstallUpdate(context: android.content.Context) = appUpdateManager.downloadAndInstall(context)
 
+
     /** YouTube Music account connection + playlist-sync state (§ YouTube Music). */
     val ytConnection: StateFlow<com.listenit.music.data.ytmusic.YtConnection> = ytAuthManager.connection
     val ytSyncState: StateFlow<com.listenit.music.data.ytmusic.YtSyncState> = ytMusicSyncManager.state
@@ -330,6 +331,9 @@ class SettingsViewModel @Inject constructor(
     }
     fun setHapticFeedbackEnabled(enabled: Boolean) = launchSettingsAction("update haptic tactile feedback") {
         settingsPreferences.setHapticFeedbackEnabled(enabled)
+    }
+    fun setUserProfileAvatar(avatar: String) = launchSettingsAction("update user profile avatar") {
+        settingsPreferences.setUserProfileAvatar(avatar)
     }
 
     // ── Experimental: 15-band equalizer ──

@@ -22,6 +22,7 @@ data class GenreOption(
 
 data class OnboardingUiState(
     val name: String = "",
+    val avatar: String = "",
     val selectedGenres: Set<String> = setOf("Punjabi", "DHH", "Hindi", "Haryanvi", "English"),
     val isSaving: Boolean = false,
     val availableGenres: List<GenreOption> = listOf(
@@ -60,6 +61,7 @@ class OnboardingViewModel @Inject constructor(
             _uiState.update {
                 it.copy(
                     name = initialName,
+                    avatar = misc.userProfileAvatar,
                     selectedGenres = initialGenres,
                 )
             }
@@ -68,6 +70,13 @@ class OnboardingViewModel @Inject constructor(
 
     fun onNameChanged(newName: String) {
         _uiState.update { it.copy(name = newName) }
+    }
+
+    fun onAvatarChanged(newAvatar: String) {
+        _uiState.update { it.copy(avatar = newAvatar) }
+        viewModelScope.launch {
+            settingsPreferences.setUserProfileAvatar(newAvatar)
+        }
     }
 
     fun toggleGenre(genreId: String) {
@@ -90,6 +99,9 @@ class OnboardingViewModel @Inject constructor(
         viewModelScope.launch {
             _uiState.update { it.copy(isSaving = true) }
             settingsPreferences.saveUserProfileAndGenres(trimmedName, genres)
+            if (state.avatar.isNotBlank()) {
+                settingsPreferences.setUserProfileAvatar(state.avatar)
+            }
             val session = sessionPreferences.session.first()
             if (session.username.isBlank()) {
                 sessionPreferences.setSignedIn(trimmedName)

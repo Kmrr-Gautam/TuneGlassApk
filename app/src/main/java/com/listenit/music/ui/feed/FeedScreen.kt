@@ -137,6 +137,7 @@ import com.listenit.music.ui.theme.LocalLiquidGlass
 import com.listenit.music.ui.theme.LiquidGlassSurface
 import com.listenit.music.ui.theme.liquidGlassChrome
 import com.listenit.music.ui.theme.LiquidGlassPreset
+import com.listenit.music.ui.common.UserAvatarDisplay
 import com.listenit.music.ui.theme.liquidGlassContainerColor
 
 @OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class)
@@ -152,9 +153,11 @@ fun FeedScreen(
     onOpenFriendProfile: (username: String, displayName: String?, avatarUrl: String?) -> Unit = { _, _, _ -> },
     onOpenNewReleases: () -> Unit = {},
     viewModel: FeedViewModel = hiltViewModel(),
+    settingsViewModel: com.listenit.music.ui.settings.SettingsViewModel = hiltViewModel(),
     artistAlbumNavigator: ArtistAlbumNavigator = hiltViewModel<ArtistAlbumNavBridgeFeed>().navigator,
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
+    val miscSettings by settingsViewModel.misc.collectAsStateWithLifecycle()
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner, viewModel) {
         val observer = LifecycleEventObserver { _, event ->
@@ -206,9 +209,8 @@ fun FeedScreen(
                 .fillMaxSize()
                 .adaptiveContentWidth(maxWidth = 920.dp),
         ) {
-            // ── Minimalist Aesthetic Top Bar ──
+            // ── Reference Header: "Home" heading + profile icon aligned upper-right ──
             val displayName = state.feedData.userName?.takeIf(String::isNotBlank)
-            val fullGreeting = if (!displayName.isNullOrBlank()) "$greeting, $displayName" else greeting
 
             Row(
                 modifier = Modifier
@@ -222,24 +224,32 @@ fun FeedScreen(
             ) {
                 Column {
                     Text(
-                        text = fullGreeting,
+                        text = "Home",
                         style = MaterialTheme.typography.titleLarge.copy(
-                            fontSize = 22.sp,
+                            fontSize = 24.sp,
                             fontWeight = FontWeight.Bold,
                             letterSpacing = (-0.4).sp,
                         ),
                         color = Color.White,
                     )
-                    Text(
-                        text = "TuneGlass Music",
-                        style = MaterialTheme.typography.labelSmall.copy(
-                            fontSize = 11.sp,
-                            fontWeight = FontWeight.Medium,
-                            letterSpacing = 0.8.sp,
-                        ),
-                        color = Color.White.copy(alpha = 0.45f),
-                    )
+                    if (!displayName.isNullOrBlank()) {
+                        Text(
+                            text = "$greeting, $displayName",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontSize = 11.sp,
+                                fontWeight = FontWeight.Medium,
+                            ),
+                            color = Color.White.copy(alpha = 0.50f),
+                        )
+                    }
                 }
+
+                UserAvatarDisplay(
+                    avatar = miscSettings.userProfileAvatar,
+                    displayName = displayName,
+                    size = 36.dp,
+                    onClick = onOpenSettings,
+                )
             }
 
             PullToRefreshBox(
@@ -820,18 +830,18 @@ private fun MusicPosterSlideshow(
     val slides = remember(feedData) {
         val list = mutableListOf<PosterSlide>()
 
-        // 1. Infinite Radio - Personal AI station
+        // 1. Infinite Radio - Personal station
         val radioArt = feedData.quickPicks.firstOrNull { !it.artworkUrl.isNullOrBlank() }?.artworkUrl
             ?: feedData.spotlight?.artworkUrl
         list.add(
             PosterSlide(
                 id = "infinite_radio",
-                badge = "LIVE AI STATION",
+                badge = "TOP STATION",
                 badgeIcon = Icons.Filled.AutoAwesome,
                 title = "Infinite Radio",
                 subtitle = "An endless station shaped by your daily taste",
                 posterUrl = radioArt,
-                accentColor = androidx.compose.ui.graphics.Color(0xFFEC4899),
+                accentColor = androidx.compose.ui.graphics.Color(0xFF91A68B),
                 actionText = "Tune In",
                 onPlay = onPlayInfiniteRadio,
             )
@@ -843,12 +853,12 @@ private fun MusicPosterSlideshow(
             list.add(
                 PosterSlide(
                     id = "daily_anthem",
-                    badge = "TODAY'S ANTHEM",
+                    badge = "TOP SONG",
                     badgeIcon = Icons.Filled.Whatshot,
                     title = topTrack.title,
                     subtitle = "${ArtistHelper.primaryArtist(topTrack.artist)} \u2022 Hand-picked for you",
                     posterUrl = topTrack.artworkUrl,
-                    accentColor = androidx.compose.ui.graphics.Color(0xFF06B6D4),
+                    accentColor = androidx.compose.ui.graphics.Color(0xFF7895A2),
                     actionText = "Play Anthem",
                     onPlay = { onPlayTracksQueue(feedData.quickPicks, 0, "Daily Anthem") },
                 )
@@ -861,12 +871,12 @@ private fun MusicPosterSlideshow(
             list.add(
                 PosterSlide(
                     id = "mix_${mix.title}",
-                    badge = "CURATED MIX",
+                    badge = "FEATURED MIX",
                     badgeIcon = Icons.Filled.GraphicEq,
                     title = mix.title,
                     subtitle = "Vibes with ${ArtistHelper.primaryArtist(mix.seed.artist)} & similar sound",
                     posterUrl = mix.seed.artworkUrl,
-                    accentColor = androidx.compose.ui.graphics.Color(0xFFA855F7),
+                    accentColor = androidx.compose.ui.graphics.Color(0xFF8F9479),
                     actionText = "Start Mix",
                     onPlay = { onPlayTracksQueue(listOf(mix.seed), 0, mix.title) },
                 )
@@ -876,12 +886,12 @@ private fun MusicPosterSlideshow(
             list.add(
                 PosterSlide(
                     id = "fresh_${fresh.videoId}",
-                    badge = "FRESH DISCOVERY",
+                    badge = "FEATURED",
                     badgeIcon = Icons.Filled.Explore,
                     title = fresh.title,
                     subtitle = "${ArtistHelper.primaryArtist(fresh.artist)} \u2022 Fresh drop",
                     posterUrl = fresh.artworkUrl,
-                    accentColor = androidx.compose.ui.graphics.Color(0xFF10B981),
+                    accentColor = androidx.compose.ui.graphics.Color(0xFF91A68B),
                     actionText = "Listen Now",
                     onPlay = { onPlayTracksQueue(feedData.freshFinds, 0, "Fresh Finds") },
                 )
@@ -899,7 +909,7 @@ private fun MusicPosterSlideshow(
                     title = chart.title,
                     subtitle = "${ArtistHelper.primaryArtist(chart.artist)} \u2022 Trending worldwide",
                     posterUrl = chart.artworkUrl,
-                    accentColor = androidx.compose.ui.graphics.Color(0xFFF59E0B),
+                    accentColor = androidx.compose.ui.graphics.Color(0xFFC7A762),
                     actionText = "Play Hits",
                     onPlay = { onPlayTracksQueue(feedData.charts, 0, "Top Charts") },
                 )
@@ -914,7 +924,7 @@ private fun MusicPosterSlideshow(
                     title = release.title,
                     subtitle = "${release.author ?: "Featured"} \u2022 Fresh out this week",
                     posterUrl = release.artworkUrl,
-                    accentColor = androidx.compose.ui.graphics.Color(0xFF6366F1),
+                    accentColor = androidx.compose.ui.graphics.Color(0xFFC27D6E),
                     actionText = "Explore Album",
                     onPlay = { onOpenFeedPlaylist(release.id) },
                 )
@@ -939,7 +949,7 @@ private fun MusicPosterSlideshow(
             modifier = Modifier.fillMaxWidth(),
         ) { page ->
             val slide = slides[page]
-            val cardShape = RoundedCornerShape(26.dp)
+            val cardShape = RoundedCornerShape(20.dp)
 
             LiquidGlassSurface(
                 onClick = slide.onPlay,

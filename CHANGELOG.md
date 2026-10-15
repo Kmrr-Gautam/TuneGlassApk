@@ -1,6 +1,18 @@
 # Changelog
 
-## Unreleased
+## [1.1.4] - 2026-10-15
+
+### Added
+- **Custom Profile Avatars & Mini Doodles:** Users can customize their profile picture by picking images from their gallery or choosing between 10 colorful mini doodles across Login, Onboarding, and Settings.
+- **Quick Settings Navigation:** Tapping the profile avatar on the Home screen header takes the user directly to About & System in Settings.
+- **What's New Dialog:** In-app version changelog popup notifying users about newly introduced features and bug fixes upon launch.
+- **Liquid Frequency Glass Styling:** Sleek charcoal and translucent frosted glass styling with tactile spring interactions.
+
+### Changed & Fixed
+- **Clean Full-Screen Playback Experience:** Removed Dynamic Island overlay to eliminate background display conflicts and provide a clean, distraction-free UI.
+- **Privacy Improvements:** Replaced personalized demo name with generic "XYZ" placeholder across onboarding and greeting headers.
+- **Notification Polish:** Refined foreground playback notification behavior and actions.
+
 
 ### Fixed
 - **Duplicate/overlapping "now playing" notification on Android 10 (One UI 2.x).**

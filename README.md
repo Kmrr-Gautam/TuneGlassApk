@@ -2,13 +2,13 @@
 
 <img src="TuneGlass.png" alt="TuneGlass Logo" width="120" height="120" style="border-radius: 50%;" />
 
-# TuneGlass v1.1.3
+# TuneGlass v1.1.4
 
 **High-Resolution Lossless Music Streaming & Player with Real-Time Synced Lyrics & Smart Discovery for Android, built with Material 3 Expressive design.**
 
 <p align="center">
   <a href="https://github.com/Kmrr-Gautam/TuneGlassApk/raw/main/tuneglass.apk">
-    <img src="https://img.shields.io/badge/Download%20APK-v1.1.3%20(Latest)-00E5FF?style=for-the-badge&logo=android&logoColor=white&labelColor=012226" alt="Download APK" />
+    <img src="https://img.shields.io/badge/Download%20APK-v1.1.4%20(Latest)-00E5FF?style=for-the-badge&logo=android&logoColor=white&labelColor=012226" alt="Download APK" />
   </a>
   <a href="https://github.com/Kmrr-Gautam/TuneGlassApk/releases">
     <img src="https://img.shields.io/badge/GitHub-Releases-C6F100?style=for-the-badge&logo=github&logoColor=black&labelColor=012226" alt="GitHub Releases" />
@@ -17,7 +17,7 @@
     <img src="https://img.shields.io/badge/Audio-Hi--Res%20Lossless%20FLAC-00E5FF?style=for-the-badge&logo=flac&logoColor=white&labelColor=012226" alt="Hi-Res Lossless FLAC" />
   </a>
   <a href="#">
-    <img src="https://img.shields.io/badge/Version-1.1.3--native-C6F100?style=for-the-badge&labelColor=012226" alt="Version 1.1.3-native" />
+    <img src="https://img.shields.io/badge/Version-1.1.4--native-C6F100?style=for-the-badge&labelColor=012226" alt="Version 1.1.4-native" />
   </a>
   <a href="#">
     <img src="https://img.shields.io/badge/Platform-Android-3DDC84?style=for-the-badge&logo=android&logoColor=white&labelColor=2d2d2d" alt="Platform" />
@@ -59,7 +59,7 @@ Get the latest standalone APK release directly from GitHub:
 
 | Package | Version | Compatibility | Architecture | Direct Download | SHA-256 Checksum |
 |:---|:---:|:---:|:---:|:---:|:---:|
-| **TuneGlass APK** | **v1.1.3** (Latest) | Android 8.0+ (API 26+) | Universal (`arm64-v8a`, `armeabi-v7a`, `x86_64`) | [**📥 Download `tuneglass.apk`**](https://github.com/Kmrr-Gautam/TuneGlassApk/raw/main/tuneglass.apk) | `03BEE15B304A4A360CB2B2756BA0F9B7A3949C75596D90A2FD735CC41F992013` |
+| **TuneGlass APK** | **v1.1.4** (Latest) | Android 8.0+ (API 26+) | Universal (`arm64-v8a`, `armeabi-v7a`, `x86_64`) | [**📥 Download `tuneglass.apk`**](https://github.com/Kmrr-Gautam/TuneGlassApk/raw/main/tuneglass.apk) | `F416E0CC4C50A191C74B8CB7AF693A26560A221D343D5542498142D106FEFF89` |
 
 ### 📲 How to Install
 1. **Download the APK:** Tap [**Download `tuneglass.apk`**](https://github.com/Kmrr-Gautam/TuneGlassApk/raw/main/tuneglass.apk) directly on your Android phone.
@@ -118,7 +118,9 @@ TuneGlass features a lossless streaming and download engine powered directly by 
 | <img src="https://api.iconify.design/lucide:wand-2.svg?color=%23C6F100" width="20" height="20" /> | **Taste Mixes & Playlists** | Generate unique 30–35 track mood mixes, regenerate fresh variations, manage custom playlists, and sync with YouTube Music. |
 | <img src="https://api.iconify.design/lucide:users.svg?color=%23FFB4A2" width="20" height="20" /> | **Friends & Social Feed** | Browse friends' listening habits, explore their top tracks, and play their taste profiles. |
 | <img src="https://api.iconify.design/lucide:radio.svg?color=%2300E5FF" width="20" height="20" /> | **Integrated Scrobbler** | Automatic background scrobbler watching your active media sessions across any Android music app with zero battery drain. |
-| <img src="https://api.iconify.design/lucide:palette.svg?color=%23C6F100" width="20" height="20" /> | **Material 3 Expressive** | Dynamic wallpaper colors, custom HSL color picker, dynamic album art palette, fluid morphing cards, and tactile haptics. |
+| <img src="https://api.iconify.design/lucide:palette.svg?color=%23C6F100" width="20" height="20" /> | **Material 3 Expressive & Liquid Lens UI** | Dynamic wallpaper colors, custom HSL color picker, dynamic album art palette, fluid morphing cards, and tactile frosted glass styling. |
+| <img src="https://api.iconify.design/lucide:user-check.svg?color=%2300E5FF" width="20" height="20" /> | **Profile Avatar & Doodles** | Personalize your profile with custom images from your phone's gallery or pick from 10 vibrant mini doodles across login, onboarding, and settings. |
+| <img src="https://api.iconify.design/lucide:sparkles.svg?color=%23FFB4A2" width="20" height="20" /> | **What's New Updates Modal** | In-app version changelog dialog notifying returning users about newly introduced features, performance boosts, and bug fixes on launch. |
 | <img src="https://api.iconify.design/lucide:cast.svg?color=%2300E5FF" width="20" height="20" /> | **Chromecast & Android Auto** | Stream to Google Cast receivers and browse music securely in your car with Android Auto. |
 
 ---

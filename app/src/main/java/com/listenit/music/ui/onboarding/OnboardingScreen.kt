@@ -98,10 +98,13 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.listenit.music.R
 import com.listenit.music.ui.common.FrequencyOrb
+import com.listenit.music.ui.common.ProfileAvatarPickerSheet
+import com.listenit.music.ui.common.UserAvatarDisplay
 import com.listenit.music.ui.common.adaptiveContentWidth
 import com.listenit.music.ui.player.LocalMusicPlayer
 import com.listenit.music.ui.theme.LiquidFrequency
 import com.listenit.music.ui.theme.liquidGlassPanel
+import androidx.compose.material.icons.filled.AddPhotoAlternate
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -213,7 +216,9 @@ fun OnboardingScreen(
                 OnboardingStage.IDENTITY -> {
                     IdentityStageView(
                         name = state.name,
+                        avatar = state.avatar,
                         onNameChanged = viewModel::onNameChanged,
+                        onAvatarChanged = viewModel::onAvatarChanged,
                         onBack = { stage = OnboardingStage.WELCOME },
                         onContinue = {
                             focusManager.clearFocus()
@@ -404,12 +409,15 @@ private fun WelcomeStageView(
 @Composable
 private fun IdentityStageView(
     name: String,
+    avatar: String,
     onNameChanged: (String) -> Unit,
+    onAvatarChanged: (String) -> Unit,
     onBack: () -> Unit,
     onContinue: () -> Unit,
 ) {
     val focusManager = LocalFocusManager.current
     val scrollState = rememberScrollState()
+    var showAvatarPicker by remember { mutableStateOf(false) }
 
     Column(
         modifier = Modifier
@@ -461,27 +469,47 @@ private fun IdentityStageView(
             horizontalAlignment = Alignment.CenterHorizontally,
             modifier = Modifier.fillMaxWidth(),
         ) {
-            // Live frequency avatar ring
+            // Interactive avatar with photo/doodle picker
             Box(
                 modifier = Modifier
                     .size(108.dp)
                     .clip(CircleShape)
-                    .background(LiquidFrequency.GlassSurface)
-                    .border(2.dp, LiquidFrequency.GlassBorderActiveBrush, CircleShape),
+                    .clickable { showAvatarPicker = true },
                 contentAlignment = Alignment.Center,
             ) {
-                val initial = name.trim().firstOrNull()?.uppercase() ?: "T"
+                UserAvatarDisplay(
+                    avatar = avatar,
+                    displayName = name,
+                    size = 108.dp,
+                )
+                Box(
+                    modifier = Modifier
+                        .size(32.dp)
+                        .align(Alignment.BottomEnd)
+                        .background(LiquidFrequency.ElectricCyan, CircleShape)
+                        .border(2.dp, LiquidFrequency.Obsidian, CircleShape),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.AddPhotoAlternate,
+                        contentDescription = "Change profile photo",
+                        tint = LiquidFrequency.Obsidian,
+                        modifier = Modifier.size(18.dp),
+                    )
+                }
+            }
+
+            Spacer(Modifier.height(10.dp))
+
+            TextButton(onClick = { showAvatarPicker = true }) {
                 Text(
-                    text = initial,
-                    style = MaterialTheme.typography.headlineLarge.copy(
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 44.sp,
-                    ),
+                    text = if (avatar.isNotBlank()) "Change Avatar or Doodle" else "Add Photo / Mini Doodle",
+                    style = MaterialTheme.typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
                     color = LiquidFrequency.ElectricCyan,
                 )
             }
 
-            Spacer(Modifier.height(28.dp))
+            Spacer(Modifier.height(20.dp))
 
             Text(
                 text = "What should we call you?",
@@ -529,7 +557,7 @@ private fun IdentityStageView(
                         onValueChange = onNameChanged,
                         placeholder = {
                             Text(
-                                "e.g. Gautam, Resonance, Echo",
+                                "e.g. XYZ, Resonance, Echo",
                                 color = LiquidFrequency.MutedLavender.copy(alpha = 0.5f),
                             )
                         },
@@ -591,6 +619,14 @@ private fun IdentityStageView(
                     modifier = Modifier.size(20.dp),
                 )
             }
+        }
+
+        if (showAvatarPicker) {
+            ProfileAvatarPickerSheet(
+                currentAvatar = avatar,
+                onSelectAvatar = onAvatarChanged,
+                onDismiss = { showAvatarPicker = false },
+            )
         }
     }
 }

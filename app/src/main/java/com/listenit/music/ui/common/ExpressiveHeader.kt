@@ -104,7 +104,7 @@ fun ExpressiveHeader(
                     actions()
                 }
             }
-            // Liquid Frequency Hairline rule with subtle iridescent reflection
+            // Charcoal hairline rule — warm sage gradient, fading at both ends
             Box(
                 Modifier
                     .fillMaxWidth()
@@ -113,8 +113,8 @@ fun ExpressiveHeader(
                         androidx.compose.ui.graphics.Brush.horizontalGradient(
                             listOf(
                                 androidx.compose.ui.graphics.Color.Transparent,
-                                com.listenit.music.ui.theme.LiquidFrequency.ElectricCyan.copy(alpha = 0.35f),
-                                com.listenit.music.ui.theme.LiquidFrequency.Ultraviolet.copy(alpha = 0.25f),
+                                com.listenit.music.ui.theme.LiquidFrequency.ElectricCyan.copy(alpha = 0.30f),
+                                com.listenit.music.ui.theme.LiquidFrequency.MutedLavender.copy(alpha = 0.20f),
                                 androidx.compose.ui.graphics.Color.Transparent,
                             )
                         )

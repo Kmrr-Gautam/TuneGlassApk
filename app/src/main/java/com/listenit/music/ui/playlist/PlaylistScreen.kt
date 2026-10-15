@@ -183,7 +183,7 @@ fun PlaylistScreen(
         ) {
             var sortMenuExpanded by remember { mutableStateOf(false) }
             ExpressiveHeader(
-                title = "Library",
+                title = "My Library",
                 subtitle = when (selectedFilter) {
                     LibraryFilter.ALL -> "${state.playlists.size} Playlists · ${downloadedTracks.size} Offline · ${followedArtists.size} Artists"
                     LibraryFilter.OFFLINE -> "${downloadedTracks.size} Auto-Added Offline Songs"
@@ -279,7 +279,7 @@ fun PlaylistScreen(
                     Surface(
                         onClick = { selectedFilter = filter },
                         shape = RoundedCornerShape(50),
-                        color = if (isSelected) com.listenit.music.ui.theme.LiquidFrequency.ElectricCyan.copy(alpha = 0.16f)
+                        color = if (isSelected) com.listenit.music.ui.theme.LiquidFrequency.FrostedWhite
                                 else com.listenit.music.ui.theme.LiquidFrequency.GlassSubstrate,
                         border = com.listenit.music.ui.theme.LiquidFrequency.glassBorder(active = isSelected),
                         modifier = Modifier.height(36.dp),
@@ -292,7 +292,7 @@ fun PlaylistScreen(
                                 text = label,
                                 style = MaterialTheme.typography.labelLarge,
                                 fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                                color = if (isSelected) com.listenit.music.ui.theme.LiquidFrequency.ElectricCyan
+                                color = if (isSelected) Color(0xFF191B19)
                                         else com.listenit.music.ui.theme.LiquidFrequency.MutedLavender,
                                 maxLines = 1,
                                 softWrap = false,

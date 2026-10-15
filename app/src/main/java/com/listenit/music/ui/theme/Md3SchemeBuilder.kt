@@ -7,29 +7,25 @@ import kotlin.math.abs
 import kotlin.math.roundToInt
 
 /**
- * "Lens" palette. Rebuilds the app's dark scheme from a single source hue.
+ * "Charcoal" palette — redesigned from the old "Lens" indigo scheme.
  *
- * Design intent: the chrome is quiet ink and warm paper, so album artwork is
- * the only loud colour on screen. Surface steps are deliberately tiny (a few
- * lightness points apart) and separated by hairlines rather than by heavy
- * tonal contrast; the accent is a luminous pastel used sparingly, with deep,
- * muted containers behind it.
- *
- * The public API (hueOf / buildScheme / buildMonochromeScheme) and the
- * hue-seeded accent behaviour are unchanged, so the accent picker, AMOLED
- * mode, wallpaper colour and now-playing colour all keep working.
+ * Design intent: warm charcoal chrome so album artwork dominates the screen.
+ * Surfaces use tiny lightness steps separated by warm-gray hairlines; the
+ * sage-green accent is used sparingly. The public API (hueOf / buildScheme /
+ * buildMonochromeScheme) and hue-seeded accent behaviour are unchanged, so
+ * the accent picker, AMOLED mode, wallpaper colour and now-playing colour
+ * extraction all continue to work.
  */
 object Md3SchemeBuilder {
 
     /** Saturation levels (HSL %) per tonal family. */
-    private const val CHROMA_PRIMARY = 54
-    private const val CHROMA_SECONDARY = 16
-    private const val CHROMA_TERTIARY = 36
-    private const val CHROMA_NEUTRAL = 7
-    private const val CHROMA_NEUTRAL_VARIANT = 9
+    private const val CHROMA_PRIMARY = 22      // Sage green — muted, not vivid
+    private const val CHROMA_SECONDARY = 14
+    private const val CHROMA_TERTIARY = 28
+    private const val CHROMA_NEUTRAL = 5       // Warm-gray surfaces, barely tinted
+    private const val CHROMA_NEUTRAL_VARIANT = 7
 
-    /** Extracts just the hue (0-360) from a hex color — the only component
-     *  app.js's _hexToHsl() result that _applyMaterialYouScheme() actually uses. */
+    /** Extracts just the hue (0-360) from a hex color. */
     fun hueOf(hex: String): Int {
         val clean = hex.removePrefix("#")
         if (clean.length < 6) return 0
@@ -49,7 +45,7 @@ object Md3SchemeBuilder {
         return (h * 360f).roundToInt().let { ((it % 360) + 360) % 360 }
     }
 
-    /** Full dynamic scheme, seeded from [hex]'s hue. Matches _applyMaterialYouScheme(). */
+    /** Full dynamic scheme, seeded from [hex]'s hue. */
     @Suppress("UNUSED_PARAMETER")
     fun buildScheme(hex: String, amoled: Boolean, liquidGlass: Boolean = false): ColorScheme {
         val h = hueOf(hex)
@@ -63,7 +59,7 @@ object Md3SchemeBuilder {
         )
     }
 
-    /** Pure grayscale scheme (all chroma = 0). Matches _applyMonochromeScheme(). */
+    /** Pure grayscale scheme (all chroma = 0). */
     @Suppress("UNUSED_PARAMETER")
     fun buildMonochromeScheme(amoled: Boolean, liquidGlass: Boolean = false): ColorScheme = build(
         primaryHue = 0,
@@ -88,73 +84,70 @@ object Md3SchemeBuilder {
         val cN = if (monochrome) 0 else CHROMA_NEUTRAL
         val cNV = if (monochrome) 0 else CHROMA_NEUTRAL_VARIANT
 
-        // Ink: surfaces climb in very small steps so rows and cards read as
-        // faint plates on the page rather than as boxes.
-        val bgL = if (amoled) 0 else 4
-        val sc1L = if (amoled) 5 else 8
-        val sc2L = if (amoled) 8 else 11
-        val sc3L = if (amoled) 11 else 14
-
-        val backgroundCol = if (amoled) Color.Black else LiquidFrequency.Obsidian
-        val surfaceCol = if (amoled) Color.Black else LiquidFrequency.Obsidian
-        val surfaceLowCol = if (amoled) Color.Black else LiquidFrequency.GlassSubstrate
+        // Charcoal surface steps: warm green-gray, climbing in tiny increments
+        // AMOLED stays pure black; standard uses the warm charcoal base.
+        val backgroundCol  = if (amoled) Color.Black else LiquidFrequency.Obsidian
+        val surfaceCol     = if (amoled) Color.Black else LiquidFrequency.Obsidian
+        val surfaceLowCol  = if (amoled) Color.Black else LiquidFrequency.MidnightIndigo
         val surfaceLowestCol = if (amoled) Color.Black else LiquidFrequency.Obsidian
 
         return darkColorScheme(
-            // Luminous frequency accents
-            primary = hsl(primaryHue, cP, 82),
-            onPrimary = hsl(primaryHue, (cP - 14).coerceAtLeast(0), 10),
-            primaryContainer = hsl(primaryHue, (cP / 2).coerceAtLeast(0), if (amoled) 16 else 19),
-            onPrimaryContainer = hsl(primaryHue, (cP + 8).coerceAtMost(100), 92),
+            // Primary accent: sage green (hue from accent picker, muted chroma)
+            primary              = hsl(primaryHue, cP, 66),
+            onPrimary            = hsl(primaryHue, (cP - 8).coerceAtLeast(0), 12),
+            primaryContainer     = hsl(primaryHue, (cP / 2).coerceAtLeast(0), if (amoled) 18 else 22),
+            onPrimaryContainer   = hsl(primaryHue, (cP + 6).coerceAtMost(100), 90),
 
-            secondary = hsl(secondaryHue, cS, 78),
-            onSecondary = hsl(secondaryHue, cS, 12),
-            secondaryContainer = hsl(secondaryHue, cS, if (amoled) 15 else 18),
-            onSecondaryContainer = hsl(secondaryHue, (cS + 4).coerceAtMost(100), 90),
+            // Secondary accent: dusty blue hue
+            secondary            = hsl(secondaryHue, cS, 64),
+            onSecondary          = hsl(secondaryHue, cS, 12),
+            secondaryContainer   = hsl(secondaryHue, cS, if (amoled) 16 else 20),
+            onSecondaryContainer = hsl(secondaryHue, (cS + 4).coerceAtMost(100), 88),
 
-            tertiary = hsl(tertiaryHue, cT, 80),
-            onTertiary = hsl(tertiaryHue, cT, 12),
-            tertiaryContainer = hsl(tertiaryHue, (cT / 2).coerceAtLeast(0), if (amoled) 16 else 19),
-            onTertiaryContainer = hsl(tertiaryHue, (cT + 6).coerceAtMost(100), 92),
+            // Tertiary accent: warm beige/terracotta
+            tertiary             = hsl(tertiaryHue, cT, 68),
+            onTertiary           = hsl(tertiaryHue, cT, 12),
+            tertiaryContainer    = hsl(tertiaryHue, (cT / 2).coerceAtLeast(0), if (amoled) 18 else 22),
+            onTertiaryContainer  = hsl(tertiaryHue, (cT + 4).coerceAtMost(100), 90),
 
-            error = hsl(2, 62, 72),
-            onError = hsl(2, 50, 12),
-            errorContainer = hsl(2, 36, 22),
-            onErrorContainer = hsl(2, 60, 90),
+            // Error: accessible muted red
+            error                = hsl(2, 50, 68),
+            onError              = hsl(2, 44, 12),
+            errorContainer       = hsl(2, 30, 22),
+            onErrorContainer     = hsl(2, 48, 88),
 
-            // Liquid Frequency surfaces: Obsidian backdrop, Frosted White typography, Muted Lavender details
-            background = backgroundCol,
-            onBackground = LiquidFrequency.FrostedWhite,
-            surface = surfaceCol,
-            onSurface = LiquidFrequency.FrostedWhite,
-            surfaceContainerLowest = surfaceLowestCol,
-            surfaceContainerLow = surfaceLowCol,
-            surfaceContainer = if (amoled) Color(0xFF0A0C16) else LiquidFrequency.MidnightIndigo,
-            surfaceContainerHigh = if (amoled) Color(0xFF101322) else LiquidFrequency.GlassSurface,
-            surfaceContainerHighest = if (amoled) Color(0xFF151A30) else LiquidFrequency.GlassSurfaceElevated,
-            surfaceVariant = hsl(neutralHue, cNV, 16),
-            onSurfaceVariant = LiquidFrequency.MutedLavender,
+            // Charcoal surfaces — the key visual shift
+            background                 = backgroundCol,
+            onBackground               = LiquidFrequency.FrostedWhite,
+            surface                    = surfaceCol,
+            onSurface                  = LiquidFrequency.FrostedWhite,
+            surfaceContainerLowest     = surfaceLowestCol,
+            surfaceContainerLow        = surfaceLowCol,
+            surfaceContainer           = if (amoled) Color(0xFF0D0D0D) else LiquidFrequency.MidnightIndigo,
+            surfaceContainerHigh       = if (amoled) Color(0xFF141414) else LiquidFrequency.GlassSubstrate,
+            surfaceContainerHighest    = if (amoled) Color(0xFF1A1A1A) else LiquidFrequency.GlassSurface,
+            surfaceVariant             = hsl(neutralHue, cNV, 20),
+            onSurfaceVariant           = LiquidFrequency.MutedLavender,
 
-            // Hairlines are first-class luminous strokes in Liquid Frequency
-            outline = LiquidFrequency.FrostedWhite.copy(alpha = 0.22f),
-            outlineVariant = LiquidFrequency.ElectricCyan.copy(alpha = 0.14f),
+            // Warm-gray hairlines
+            outline                    = LiquidFrequency.FrostedWhite.copy(alpha = 0.16f),
+            outlineVariant             = Color(0xFF454844),
 
-            inverseSurface = hsl(neutralHue, cNV, 90),
-            inverseOnSurface = hsl(neutralHue, cNV, 12),
-            inversePrimary = hsl(primaryHue, cP, 38),
-            scrim = Color.Black,
+            inverseSurface             = hsl(neutralHue, cNV, 88),
+            inverseOnSurface           = hsl(neutralHue, cNV, 14),
+            inversePrimary             = hsl(primaryHue, cP, 36),
+            scrim                      = Color.Black,
         )
     }
 
     /**
-     * HSL(h in 0-360, s in 0-100, l in 0-100) -> Compose Color.
-     * Standard conversion — must match browsers' CSS hsl() exactly so every
-     * token lines up with the values app.css previously rendered.
+     * HSL(h in 0–360, s in 0–100, l in 0–100) → Compose Color.
+     * Standard conversion — unchanged from original.
      */
     private fun hsl(h: Int, s: Int, l: Int): Color {
         val hf = ((h % 360) + 360) % 360 / 360f
-        val sf = (s.coerceIn(0, 100)) / 100f
-        val lf = (l.coerceIn(0, 100)) / 100f
+        val sf = s.coerceIn(0, 100) / 100f
+        val lf = l.coerceIn(0, 100) / 100f
 
         if (sf == 0f) return Color(lf, lf, lf)
 

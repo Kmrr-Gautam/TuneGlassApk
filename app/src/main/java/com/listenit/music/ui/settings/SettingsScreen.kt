@@ -166,6 +166,9 @@ import com.listenit.music.data.local.EqualizerSettings
 import com.listenit.music.data.local.MusicBarStyle
 import com.listenit.music.data.local.eqBandLabel
 import com.listenit.music.ui.common.ExpressiveHeader
+import com.listenit.music.ui.common.ProfileAvatarPickerSheet
+import com.listenit.music.ui.common.UserAvatarDisplay
+import androidx.compose.material.icons.filled.AddPhotoAlternate
 import com.listenit.music.ui.common.safeDrawingBottomPadding
 import com.listenit.music.ui.common.safeHorizontalContentPadding
 import com.listenit.music.ui.common.adaptiveContentWidth
@@ -174,17 +177,17 @@ import kotlin.math.roundToInt
 
 private data class AccentPreset(val name: String, val hex: String)
 private val ACCENT_PRESETS = listOf(
-    AccentPreset("Cyan", "#69F0F0"),
-    AccentPreset("Ultraviolet", "#9875FF"),
-    AccentPreset("Coral", "#FF8F9D"),
-    AccentPreset("Ocean", "#2196C6"),
-    AccentPreset("Violet", "#7C4DFF"),
-    AccentPreset("Amber", "#E0A030"),
+    AccentPreset("Sage",       "#91A68B"),   // primary: muted sage green
+    AccentPreset("Dusty Blue", "#718D9B"),   // dusty muted blue
+    AccentPreset("Terracotta", "#AD7561"),   // warm terracotta
+    AccentPreset("Warm Beige", "#C6AE86"),   // warm golden beige
+    AccentPreset("Olive",      "#7A8C5E"),   // dark olive green
+    AccentPreset("Amber",      "#C49A3C"),   // muted amber
 )
 
 // -- Expressive shape scale used only within this screen --
-private val CardOuterShape = RoundedCornerShape(14.dp)
-private val IconBadgeShape = RoundedCornerShape(14.dp)
+private val CardOuterShape = RoundedCornerShape(16.dp)
+private val IconBadgeShape = RoundedCornerShape(12.dp)
 
 /** Where a row sits within a visually-connected group of settings rows —
  *  drives per-row corner radii so a multi-row group reads as one premium
@@ -241,7 +244,7 @@ private fun SettingsGroup(rowCount: Int, content: @Composable (index: Int, posit
  * press feedback). Every setting, callback, and piece of state below is
  * unchanged from the original implementation.
  */
-private enum class SettingsCategory(val title: String, val icon: ImageVector) {
+enum class SettingsCategory(val title: String, val icon: ImageVector) {
     AUDIO("Sound & Hi-Res", Icons.Filled.VolumeUp),
     APPEARANCE("Glass & Style", Icons.Filled.Palette),
     CLOUD("Cloud & Sync", Icons.Filled.CloudSync),
@@ -253,6 +256,8 @@ private enum class SettingsCategory(val title: String, val icon: ImageVector) {
 @Composable
 fun SettingsScreen(
     onBack: (() -> Unit)? = null,
+    targetCategory: SettingsCategory? = null,
+    onCategoryConsumed: (() -> Unit)? = null,
     onLoggedOut: () -> Unit = {},
     onOpenChooseApps: () -> Unit = {},
     onOpenDownloads: () -> Unit = {},
@@ -287,6 +292,8 @@ fun SettingsScreen(
     var showSyncPlaylistsSheet by remember { mutableStateOf(false) }
     var showYtLibraryVisibilitySheet by remember { mutableStateOf(false) }
     var showYtDisconnectConfirm by remember { mutableStateOf(false) }
+    var showAvatarPickerSheet by remember { mutableStateOf(false) }
+    var showWhatsNewDialog by remember { mutableStateOf(false) }
 
     // Sends the user to Android's own Notification Listener access screen
     // — the one permission this feature needs that the app can never grant
@@ -343,7 +350,13 @@ fun SettingsScreen(
         ExpressiveHeader(title = "Control Center", onBack = onBack)
 
         // ── Fluid Morphism Category Selector Dock ───────────────────────
-        var activeCategory by remember { mutableStateOf(SettingsCategory.AUDIO) }
+        var activeCategory by remember { mutableStateOf(targetCategory ?: SettingsCategory.AUDIO) }
+        LaunchedEffect(targetCategory) {
+            if (targetCategory != null) {
+                activeCategory = targetCategory
+                onCategoryConsumed?.invoke()
+            }
+        }
 
         Row(
             modifier = Modifier
@@ -604,17 +617,7 @@ fun SettingsScreen(
                                 subtitle = if (misc.fullScreenPoster) "Full screen poster enabled" else "Normal poster enabled",
                                 checked = misc.fullScreenPoster,
                                 onCheckedChange = viewModel::setFullScreenPoster,
-                                position = GroupPosition.TOP,
-                            )
-                            SettingsToggleCard(
-                                icon = Icons.Filled.BubbleChart,
-                                iconContainer = MaterialTheme.colorScheme.secondaryContainer,
-                                iconTint = MaterialTheme.colorScheme.onSecondaryContainer,
-                                title = "Dynamic Island",
-                                subtitle = if (misc.dynamicIslandEnabled) "Active on supported devices when app is closed (Oppo, Vivo, OnePlus, Xiaomi, Samsung)" else "Dynamic island disabled",
-                                checked = misc.dynamicIslandEnabled,
-                                onCheckedChange = viewModel::setDynamicIsland,
-                                position = GroupPosition.BOTTOM,
+                                position = GroupPosition.SINGLE,
                             )
                             Spacer(Modifier.height(4.dp))
                             PlayerBarStylePicker(
@@ -818,7 +821,21 @@ fun SettingsScreen(
                         AccountCard(
                             isSignedIn = session.username.isNotBlank(),
                             username = session.username,
+                            avatar = misc.userProfileAvatar,
+                            onAvatarClick = { showAvatarPickerSheet = true },
                             onLogOut = { viewModel.logOut(onLoggedOut) },
+                        )
+                    }
+
+                    item {
+                        SettingsActionCard(
+                            icon = Icons.Filled.AddPhotoAlternate,
+                            iconContainer = MaterialTheme.colorScheme.primaryContainer,
+                            iconTint = MaterialTheme.colorScheme.onPrimaryContainer,
+                            title = "Profile Photo & Mini Doodles",
+                            subtitle = if (misc.userProfileAvatar.isNotBlank()) "Change or remove profile avatar" else "Choose from gallery or pick a mini doodle avatar",
+                            onClick = { showAvatarPickerSheet = true },
+                            position = GroupPosition.SINGLE,
                         )
                     }
 
@@ -875,7 +892,7 @@ fun SettingsScreen(
                                 }
                             }
 
-                            SettingsGroup(rowCount = 3) { index, position ->
+                            SettingsGroup(rowCount = 4) { index, position ->
                                 when (index) {
                                     0 -> SettingsActionCard(
                                         icon = if (updateInfo.isDownloading) Icons.Filled.CloudDownload else Icons.Filled.CloudSync,
@@ -895,17 +912,24 @@ fun SettingsScreen(
                                         position = position,
                                     )
                                     1 -> SettingsActionCard(
-                                        icon = Icons.Filled.Info,
+                                        icon = Icons.Filled.AutoAwesome,
                                         iconContainer = MaterialTheme.colorScheme.secondaryContainer,
                                         iconTint = MaterialTheme.colorScheme.onSecondaryContainer,
-                                        title = "TuneGlass Music Player",
-                                        subtitle = "v${appVersionName(context)} • Liquid Frequency Lens UI",
-                                        onClick = {
-                                            viewModel.showToast("TuneGlass v${appVersionName(context)} • Lens Morphism UI")
-                                        },
+                                        title = "What's New & Bug Fixes",
+                                        subtitle = "v${appVersionName(context)} • View latest features & fixes",
+                                        onClick = { showWhatsNewDialog = true },
                                         position = position,
                                     )
                                     2 -> SettingsActionCard(
+                                        icon = Icons.Filled.Info,
+                                        iconContainer = MaterialTheme.colorScheme.tertiaryContainer,
+                                        iconTint = MaterialTheme.colorScheme.onTertiaryContainer,
+                                        title = "TuneGlass Music Player",
+                                        subtitle = "v${appVersionName(context)} • Liquid Frequency Lens UI",
+                                        onClick = { showWhatsNewDialog = true },
+                                        position = position,
+                                    )
+                                    3 -> SettingsActionCard(
                                         icon = Icons.Filled.Delete,
                                         iconContainer = MaterialTheme.colorScheme.errorContainer,
                                         iconTint = MaterialTheme.colorScheme.onErrorContainer,
@@ -923,6 +947,23 @@ fun SettingsScreen(
         }
     } // Closes Column
     } // Closes Box
+
+    // -- Profile Avatar Picker Bottom Sheet --
+    if (showAvatarPickerSheet) {
+        com.listenit.music.ui.common.ProfileAvatarPickerSheet(
+            currentAvatar = misc.userProfileAvatar,
+            onSelectAvatar = { viewModel.setUserProfileAvatar(it) },
+            onDismiss = { showAvatarPickerSheet = false },
+        )
+    }
+
+    // -- What's New & Bug Fixes Dialog --
+    if (showWhatsNewDialog) {
+        com.listenit.music.ui.common.WhatsNewDialog(
+            versionName = appVersionName(context),
+            onDismiss = { showWhatsNewDialog = false },
+        )
+    }
 
     // -- Custom color wheel dialog (par 8.4) --
     if (state.showColorWheel) {
@@ -1406,6 +1447,14 @@ fun SettingsScreen(
             }
         }
     }
+
+    if (showAvatarPickerSheet) {
+        ProfileAvatarPickerSheet(
+            currentAvatar = misc.userProfileAvatar,
+            onSelectAvatar = viewModel::setUserProfileAvatar,
+            onDismiss = { showAvatarPickerSheet = false },
+        )
+    }
 }
 
 private fun appVersionName(context: android.content.Context): String = try {
@@ -1691,12 +1740,12 @@ private fun PlayerBarMiniPreview(style: MusicBarStyle, selected: Boolean) {
                 )
             }
             MusicBarStyle.NEON -> {
-                // Glow track
+                // Warm sage-to-dusty-blue gradient track (replaces electric cyan/violet)
                 val glowBrush = Brush.horizontalGradient(
                     colors = listOf(
-                        Color(0xFF00E5FF).copy(alpha = 0.9f),
-                        Color(0xFF7C4DFF).copy(alpha = 0.9f),
-                        Color(0xFF00E5FF).copy(alpha = 0.4f),
+                        com.listenit.music.ui.theme.LiquidFrequency.ElectricCyan.copy(alpha = 0.85f),
+                        com.listenit.music.ui.theme.LiquidFrequency.Ultraviolet.copy(alpha = 0.85f),
+                        com.listenit.music.ui.theme.LiquidFrequency.ElectricCyan.copy(alpha = 0.40f),
                     ),
                     startX = 0f,
                     endX = progressPx,
@@ -1715,14 +1764,14 @@ private fun PlayerBarMiniPreview(style: MusicBarStyle, selected: Boolean) {
                     strokeWidth = 2.dp.toPx(),
                     cap = StrokeCap.Round,
                 )
-                // Electric pulse thumb
+                // Sage thumb
                 drawCircle(
-                    color = Color(0xFF00E5FF).copy(alpha = 0.3f),
+                    color = com.listenit.music.ui.theme.LiquidFrequency.ElectricCyan.copy(alpha = 0.25f),
                     radius = 9.dp.toPx(),
                     center = Offset(progressPx, cx),
                 )
                 drawCircle(
-                    color = Color(0xFF00E5FF),
+                    color = com.listenit.music.ui.theme.LiquidFrequency.ElectricCyan,
                     radius = 4.dp.toPx(),
                     center = Offset(progressPx, cx),
                 )
@@ -2248,6 +2297,8 @@ private fun relativeTime(timestampMillis: Long): String {
 private fun AccountCard(
     isSignedIn: Boolean,
     username: String,
+    avatar: String? = null,
+    onAvatarClick: () -> Unit = {},
     onLogOut: () -> Unit,
 ) {
     var showLogoutConfirm by remember { mutableStateOf(false) }
@@ -2271,24 +2322,31 @@ private fun AccountCard(
         ) {
             Box(
                 Modifier
-                    .size(52.dp)
+                    .size(56.dp)
                     .clip(CircleShape)
-                    .background(
-                        Brush.linearGradient(
-                            listOf(
-                                MaterialTheme.colorScheme.primary,
-                                MaterialTheme.colorScheme.tertiary,
-                            )
-                        )
-                    ),
+                    .clickable(onClick = onAvatarClick),
                 contentAlignment = Alignment.Center,
             ) {
-                Text(
-                    if (isSignedIn && username.isNotBlank()) username.take(1).uppercase() else "L",
-                    color = MaterialTheme.colorScheme.onPrimary,
-                    fontWeight = FontWeight.Bold,
-                    style = MaterialTheme.typography.titleLarge,
+                UserAvatarDisplay(
+                    avatar = avatar,
+                    displayName = if (username.isNotBlank()) username else "Listener",
+                    size = 56.dp,
                 )
+                Box(
+                    modifier = Modifier
+                        .size(20.dp)
+                        .align(Alignment.BottomEnd)
+                        .background(MaterialTheme.colorScheme.primary, CircleShape)
+                        .border(1.5.dp, MaterialTheme.colorScheme.surface, CircleShape),
+                    contentAlignment = Alignment.Center,
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.AddPhotoAlternate,
+                        contentDescription = "Change profile photo",
+                        tint = MaterialTheme.colorScheme.onPrimary,
+                        modifier = Modifier.size(11.dp),
+                    )
+                }
             }
             Spacer(Modifier.width(16.dp))
             Column(Modifier.weight(1f)) {
@@ -2310,6 +2368,11 @@ private fun AccountCard(
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
                     color = MaterialTheme.colorScheme.onSurface,
+                )
+                Text(
+                    text = "Tap photo to change avatar",
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
                 )
             }
             Spacer(Modifier.width(8.dp))

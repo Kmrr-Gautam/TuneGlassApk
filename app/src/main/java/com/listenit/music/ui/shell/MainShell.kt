@@ -96,6 +96,9 @@ import com.listenit.music.ui.home.HomeScreen
 import com.listenit.music.ui.player.LocalMiniPlayerScrollClearance
 import com.listenit.music.ui.playlist.PlaylistScreen
 import com.listenit.music.ui.search.SearchScreen
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import com.listenit.music.ui.settings.SettingsCategory
 import com.listenit.music.ui.settings.SettingsScreen
 import com.listenit.music.ui.theme.LiquidGlassPreset
 import com.listenit.music.ui.theme.LocalLiquidGlass
@@ -189,6 +192,15 @@ fun MainShell(
     val updateInfo by mainShellViewModel.updateInfo.collectAsStateWithLifecycle()
     val showUpdateBanner = updateInfo.isUpdateAvailable && !updateInfo.isDismissed
     val navigationBackdrop = if (isLiquidGlassBackdropSupported()) rememberLayerBackdrop() else null
+    var targetSettingsCategory by remember { mutableStateOf<SettingsCategory?>(null) }
+
+    val whatsNewPrefs = remember { context.getSharedPreferences("listenit_whats_new", android.content.Context.MODE_PRIVATE) }
+    val currentAppVersion = remember {
+        try { context.packageManager.getPackageInfo(context.packageName, 0).versionName ?: "1.1.4" } catch (_: Exception) { "1.1.4" }
+    }
+    var showWhatsNewPopup by remember {
+        mutableStateOf(whatsNewPrefs.getString("last_seen_version", "") != currentAppVersion)
+    }
 
     Box(Modifier.fillMaxSize()) {
         val feedIndex = tabs.indexOf(MainTab.FEED)
@@ -204,7 +216,10 @@ fun MainShell(
             ) {
                 when (tabs[page]) {
                     MainTab.FEED -> FeedScreen(
-                        onOpenSettings = { scope.launch { pagerState.animateScrollToPage(tabs.indexOf(MainTab.SETTINGS)) } },
+                        onOpenSettings = {
+                            targetSettingsCategory = SettingsCategory.SYSTEM
+                            scope.launch { pagerState.animateScrollToPage(tabs.indexOf(MainTab.SETTINGS)) }
+                        },
                         onOpenSearch = { scope.launch { pagerState.animateScrollToPage(tabs.indexOf(MainTab.SEARCH)) } },
                         onOpenDiscover = onOpenDiscover,
                         onOpenPlaylist = onOpenPlaylist,
@@ -226,6 +241,8 @@ fun MainShell(
                     )
                     MainTab.SETTINGS -> SettingsScreen(
                         onBack = null,
+                        targetCategory = targetSettingsCategory,
+                        onCategoryConsumed = { targetSettingsCategory = null },
                         onLoggedOut = onLoggedOut,
                         onOpenChooseApps = onOpenChooseApps,
                         onOpenDownloads = onOpenDownloads,
@@ -243,6 +260,14 @@ fun MainShell(
                 updateInfo = updateInfo,
                 onUpdate = { mainShellViewModel.downloadAndInstall(context) },
                 onDismiss = { mainShellViewModel.dismissUpdate(updateInfo.latestVersion) },
+            )
+        } else if (showWhatsNewPopup) {
+            com.listenit.music.ui.common.WhatsNewDialog(
+                versionName = currentAppVersion,
+                onDismiss = {
+                    showWhatsNewPopup = false
+                    whatsNewPrefs.edit().putString("last_seen_version", currentAppVersion).apply()
+                },
             )
         }
 
@@ -269,9 +294,9 @@ private fun UpdateAvailableDialog(
     ) {
         Surface(
             shape = RoundedCornerShape(28.dp),
-            color = Color(0xFF131318),
-            border = BorderStroke(1.dp, Color.White.copy(alpha = 0.12f)),
-            shadowElevation = 24.dp,
+            color = com.listenit.music.ui.theme.LiquidFrequency.GlassSurface,
+            border = BorderStroke(1.dp, com.listenit.music.ui.theme.LiquidFrequency.FrostedWhite.copy(alpha = 0.10f)),
+            shadowElevation = 16.dp,
             modifier = Modifier
                 .padding(horizontal = 24.dp)
                 .fillMaxWidth()
@@ -479,14 +504,14 @@ private fun FloatingNavBar(
         ) {
             Surface(
                 shape = DockShape,
-                color = com.listenit.music.ui.theme.LiquidFrequency.GlassSurfaceElevated.copy(alpha = if (liquidGlass) 0.85f else 0.96f),
-                border = com.listenit.music.ui.theme.LiquidFrequency.glassBorder(active = true),
+                // Charcoal dock: warm charcoal surface with subtle warm-gray border
+                color = com.listenit.music.ui.theme.LiquidFrequency.GlassSurfaceElevated,
+                border = com.listenit.music.ui.theme.LiquidFrequency.glassBorder(active = false),
                 tonalElevation = 0.dp,
-                shadowElevation = 8.dp,
+                shadowElevation = 6.dp,
                 modifier = Modifier
                     .weight(1f)
-                    .animateContentSize(animationSpec = navSpring())
-                    .liquidGlassChrome(DockShape, liquidGlass, LiquidGlassPreset.BottomNavigation, backdrop),
+                    .animateContentSize(animationSpec = navSpring()),
             ) {
                 Row(
                     modifier = Modifier.padding(horizontal = 6.dp, vertical = 6.dp),
@@ -524,6 +549,7 @@ private fun FloatingNavBar(
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Spacer(Modifier.width(10.dp))
+                    // Sage green ring button for the generator
                     LensRingButton(
                         icon = Icons.Filled.AutoAwesome,
                         contentDescription = "Create / Generate Playlist",
@@ -531,7 +557,7 @@ private fun FloatingNavBar(
                         size = 56.dp,
                         iconSize = 22.dp,
                         tint = com.listenit.music.ui.theme.LiquidFrequency.ElectricCyan,
-                        ringColor = com.listenit.music.ui.theme.LiquidFrequency.ElectricCyan.copy(alpha = 0.65f),
+                        ringColor = com.listenit.music.ui.theme.LiquidFrequency.ElectricCyan.copy(alpha = 0.50f),
                         filled = true,
                         fillColor = com.listenit.music.ui.theme.LiquidFrequency.GlassSurfaceElevated,
                     )
@@ -549,13 +575,20 @@ private fun LiquidFrequencyNavItem(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    // Charcoal palette: sage green active, muted-gray inactive
     val contentColor by animateColorAsState(
-        targetValue = if (selected) com.listenit.music.ui.theme.LiquidFrequency.FrostedWhite else com.listenit.music.ui.theme.LiquidFrequency.MutedLavender.copy(alpha = 0.75f),
+        targetValue = if (selected)
+            com.listenit.music.ui.theme.LiquidFrequency.FrostedWhite
+        else
+            com.listenit.music.ui.theme.LiquidFrequency.MutedLavender.copy(alpha = 0.70f),
         animationSpec = navSpring(),
         label = "navItemContent",
     )
     val iconTint by animateColorAsState(
-        targetValue = if (selected) com.listenit.music.ui.theme.LiquidFrequency.ElectricCyan else com.listenit.music.ui.theme.LiquidFrequency.MutedLavender.copy(alpha = 0.65f),
+        targetValue = if (selected)
+            com.listenit.music.ui.theme.LiquidFrequency.ElectricCyan
+        else
+            com.listenit.music.ui.theme.LiquidFrequency.MutedLavender.copy(alpha = 0.60f),
         animationSpec = navSpring(),
         label = "navItemIcon",
     )
@@ -566,23 +599,14 @@ private fun LiquidFrequencyNavItem(
             .clip(NavItemShape)
             .then(
                 if (selected) {
+                    // Active: soft sage-tinted capsule background
                     Modifier
                         .background(
-                            androidx.compose.ui.graphics.Brush.verticalGradient(
-                                listOf(
-                                    com.listenit.music.ui.theme.LiquidFrequency.ElectricCyan.copy(alpha = 0.16f),
-                                    com.listenit.music.ui.theme.LiquidFrequency.Ultraviolet.copy(alpha = 0.10f),
-                                )
-                            )
+                            com.listenit.music.ui.theme.LiquidFrequency.ElectricCyan.copy(alpha = 0.14f)
                         )
                         .border(
                             1.dp,
-                            androidx.compose.ui.graphics.Brush.horizontalGradient(
-                                listOf(
-                                    com.listenit.music.ui.theme.LiquidFrequency.ElectricCyan.copy(alpha = 0.45f),
-                                    com.listenit.music.ui.theme.LiquidFrequency.Ultraviolet.copy(alpha = 0.35f),
-                                )
-                            ),
+                            com.listenit.music.ui.theme.LiquidFrequency.ElectricCyan.copy(alpha = 0.38f),
                             NavItemShape,
                         )
                 } else Modifier
@@ -598,32 +622,19 @@ private fun LiquidFrequencyNavItem(
                 imageVector = icon,
                 contentDescription = label,
                 tint = iconTint,
-                modifier = Modifier.size(19.dp),
+                modifier = Modifier.size(20.dp),
             )
             Spacer(Modifier.height(3.dp))
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-            ) {
-                Text(
-                    text = label,
-                    style = MaterialTheme.typography.labelSmall.copy(
-                        fontSize = 11.sp,
-                        fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium,
-                    ),
-                    color = contentColor,
-                    maxLines = 1,
-                    softWrap = false,
-                )
-                if (selected) {
-                    Box(
-                        modifier = Modifier
-                            .size(4.dp)
-                            .clip(CircleShape)
-                            .background(com.listenit.music.ui.theme.LiquidFrequency.ElectricCyan),
-                    )
-                }
-            }
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelSmall.copy(
+                    fontSize = 11.sp,
+                    fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+                ),
+                color = contentColor,
+                maxLines = 1,
+                softWrap = false,
+            )
         }
     }
 }

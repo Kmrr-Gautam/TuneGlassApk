@@ -96,6 +96,8 @@ data class MiscSettings(
     val downloadLyrics: Boolean = true,
     /** User's personalized profile display name */
     val userProfileName: String = "",
+    /** User's personalized profile avatar (gallery URI, image URL, or mini doodle id) */
+    val userProfileAvatar: String = "",
     /** User's chosen music genres (e.g. Punjabi, DHH, Hindi, Haryanvi, English) */
     val userGenres: Set<String> = emptySet(),
     /** Whether the user has completed the initial onboarding setup */
@@ -136,6 +138,7 @@ class SettingsPreferences @Inject constructor(
         val WAVY_SEEKBAR_ENABLED = booleanPreferencesKey("lw_wavy_seekbar_enabled")
         val DOWNLOAD_LYRICS = booleanPreferencesKey("lw_download_lyrics")
         val USER_PROFILE_NAME = stringPreferencesKey("listenit_user_profile_name")
+        val USER_PROFILE_AVATAR = stringPreferencesKey("listenit_user_profile_avatar")
         val USER_GENRES = stringSetPreferencesKey("listenit_user_genres")
         val ONBOARDING_COMPLETED = booleanPreferencesKey("listenit_onboarding_completed")
         val MUSIC_BAR_STYLE = stringPreferencesKey("lw_music_bar_style")
@@ -165,6 +168,7 @@ class SettingsPreferences @Inject constructor(
                 wavySeekbarEnabled = p.readSafely(Keys.WAVY_SEEKBAR_ENABLED) ?: true,
                 downloadLyrics = p.readSafely(Keys.DOWNLOAD_LYRICS) ?: true,
                 userProfileName = p.readSafely(Keys.USER_PROFILE_NAME).orEmpty(),
+                userProfileAvatar = p.readSafely(Keys.USER_PROFILE_AVATAR).orEmpty(),
                 userGenres = p.readSafely(Keys.USER_GENRES) ?: emptySet(),
                 onboardingCompleted = p.readSafely(Keys.ONBOARDING_COMPLETED) ?: false,
                 musicBarStyle = MusicBarStyle.fromId(p.readSafely(Keys.MUSIC_BAR_STYLE)),
@@ -174,6 +178,10 @@ class SettingsPreferences @Inject constructor(
                 hapticFeedbackEnabled = p.readSafely(Keys.HAPTIC_FEEDBACK_ENABLED) ?: true,
             )
         }
+
+    suspend fun setUserProfileAvatar(avatar: String) {
+        dataStore.edit { it[Keys.USER_PROFILE_AVATAR] = avatar }
+    }
 
     suspend fun setHapticFeedbackEnabled(enabled: Boolean) {
         dataStore.edit { it[Keys.HAPTIC_FEEDBACK_ENABLED] = enabled }
@@ -271,10 +279,13 @@ class SettingsPreferences @Inject constructor(
         dataStore.edit { it[Keys.ONBOARDING_COMPLETED] = completed }
     }
 
-    suspend fun saveUserProfileAndGenres(name: String, genres: Set<String>) {
+    suspend fun saveUserProfileAndGenres(name: String, genres: Set<String>, avatar: String = "") {
         dataStore.edit {
             it[Keys.USER_PROFILE_NAME] = name.trim()
             it[Keys.USER_GENRES] = genres
+            if (avatar.isNotBlank()) {
+                it[Keys.USER_PROFILE_AVATAR] = avatar.trim()
+            }
             it[Keys.ONBOARDING_COMPLETED] = true
         }
     }

@@ -957,7 +957,7 @@ private fun MiniPlayer(
                                     .fillMaxHeight()
                                     .background(
                                         when (musicBarStyle) {
-                                            MusicBarStyle.NEON -> Brush.horizontalGradient(listOf(Color(0xFF00E5FF), Color(0xFF9D46FF)))
+                                            MusicBarStyle.NEON -> Brush.horizontalGradient(listOf(Color(0xFF91A68B), Color(0xFF7895A2)))
                                             MusicBarStyle.VINYL -> Brush.horizontalGradient(listOf(Color(0xFFFFB300), Color(0xFFFF8F00)))
                                             MusicBarStyle.PILLBAR -> Brush.horizontalGradient(listOf(MaterialTheme.colorScheme.primary, MaterialTheme.colorScheme.secondary))
                                             MusicBarStyle.LENS -> Brush.horizontalGradient(listOf(OnArt.copy(alpha = 0.85f), OnArt))

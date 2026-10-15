@@ -109,10 +109,17 @@ import com.listenit.music.ui.theme.liquidGlassChrome
 
 private val SearchHeaderShape = RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp)
 
-private val EXPLORE_GENRES = listOf(
-    "Pop", "Rock", "Hip-Hop", "Lo-Fi", "Electronic", "Indie",
-    "R&B", "Bollywood", "Jazz", "Metal", "Acoustic", "Chill",
-    "Anime", "Classical", "Synthwave",
+private data class BrowseCategory(val name: String, val color: Color)
+
+private val BROWSE_CATEGORIES = listOf(
+    BrowseCategory("Pop", Color(0xFFC27D6E)), // Dusty terracotta
+    BrowseCategory("Chill", Color(0xFF91A68B)), // Sage green
+    BrowseCategory("Focus", Color(0xFF7895A2)), // Muted blue
+    BrowseCategory("Rock", Color(0xFFC7A762)), // Warm mustard
+    BrowseCategory("Jazz", Color(0xFF606B56)), // Dark olive
+    BrowseCategory("Workout", Color(0xFFB57062)), // Warm terracotta
+    BrowseCategory("Acoustic", Color(0xFF8A6B58)), // Desaturated brown
+    BrowseCategory("Electronic", Color(0xFF5D7A88)), // Slate blue
 )
 
 /**
@@ -162,22 +169,37 @@ fun SearchScreen(
                     .padding(horizontal = 16.dp)
                     .padding(top = 6.dp, bottom = 10.dp),
             ) {
-                // Top Search Input Row
+                // Prominent Screen Title
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(bottom = 10.dp, top = 2.dp, start = 4.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     if (onBack != null) {
                         HeaderActionIcon(Icons.AutoMirrored.Filled.ArrowBack, "Back", onBack)
                         Spacer(Modifier.width(10.dp))
                     }
+                    Text(
+                        text = "Search",
+                        style = MaterialTheme.typography.headlineMedium.copy(
+                            fontSize = 24.sp,
+                            fontWeight = FontWeight.Bold,
+                        ),
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                }
 
+                // Top Search Input Row
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
                     val pillBg = if (liquidGlass) {
                         MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.90f)
                     } else {
                         MaterialTheme.colorScheme.surfaceContainerHighest
                     }
-
 
                     BasicTextField(
                         value = state.query,
@@ -195,7 +217,7 @@ fun SearchScreen(
                             },
                         ),
                         modifier = Modifier
-                            .weight(1f)
+                            .fillMaxWidth()
                             .height(46.dp),
                         decorationBox = { innerTextField ->
                             Row(
@@ -225,7 +247,7 @@ fun SearchScreen(
                                     if (state.query.isEmpty()) {
                                         Text(
                                             text = if (state.tab == SearchTab.USERS) "Search Last.fm users\u2026"
-                                            else "Search songs, artists, albums\u2026",
+                                            else "Artists, songs, playlists\u2026",
                                             style = MaterialTheme.typography.bodyMedium,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.74f),
                                             maxLines = 1,
@@ -233,6 +255,14 @@ fun SearchScreen(
                                         )
                                     }
                                     innerTextField()
+                                }
+                                if (state.status == SearchStatus.LOADING) {
+                                    androidx.compose.material3.CircularProgressIndicator(
+                                        strokeWidth = 2.dp,
+                                        color = MaterialTheme.colorScheme.primary,
+                                        modifier = Modifier.size(16.dp),
+                                    )
+                                    Spacer(Modifier.width(6.dp))
                                 }
                                 if (state.query.isNotEmpty()) {
                                     IconButton(
@@ -354,48 +384,58 @@ fun SearchScreen(
                             }
                         }
 
-                        item(key = "explore_section") {
+                        item(key = "browse_all_section") {
                             Column(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .padding(horizontal = 16.dp, vertical = 8.dp),
                             ) {
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
+                                Text(
+                                    "Browse All",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onSurface,
                                     modifier = Modifier.padding(bottom = 12.dp),
-                                ) {
-                                    Icon(
-                                        Icons.Filled.Explore,
-                                        contentDescription = null,
-                                        tint = MaterialTheme.colorScheme.primary,
-                                        modifier = Modifier.size(18.dp),
-                                    )
-                                    Spacer(Modifier.width(8.dp))
-                                    Text(
-                                        "Explore genres & moods",
-                                        style = MaterialTheme.typography.titleSmall,
-                                        fontWeight = FontWeight.Bold,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    )
-                                }
-                                FlowRow(
-                                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                                    modifier = Modifier.fillMaxWidth(),
-                                ) {
-                                    EXPLORE_GENRES.forEach { genre ->
-                                        AssistChip(
-                                            onClick = {
-                                                focusManager.clearFocus()
-                                                viewModel.executeSearch(genre)
-                                            },
-                                            label = { Text(genre, style = MaterialTheme.typography.labelLarge) },
-                                            colors = AssistChipDefaults.assistChipColors(
-                                                containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
-                                                labelColor = MaterialTheme.colorScheme.onSurface,
-                                            ),
-                                            shape = RoundedCornerShape(12.dp),
-                                        )
+                                )
+                                val chunks = remember { BROWSE_CATEGORIES.chunked(2) }
+                                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                                    chunks.forEach { pair ->
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                                        ) {
+                                            pair.forEach { category ->
+                                                Surface(
+                                                    onClick = {
+                                                        focusManager.clearFocus()
+                                                        viewModel.executeSearch(category.name)
+                                                    },
+                                                    shape = RoundedCornerShape(16.dp),
+                                                    color = category.color.copy(alpha = 0.28f),
+                                                    border = androidx.compose.foundation.BorderStroke(1.dp, category.color.copy(alpha = 0.45f)),
+                                                    modifier = Modifier
+                                                        .weight(1f)
+                                                        .height(76.dp),
+                                                ) {
+                                                    Box(
+                                                        modifier = Modifier
+                                                            .fillMaxSize()
+                                                            .padding(horizontal = 14.dp, vertical = 12.dp),
+                                                        contentAlignment = Alignment.BottomStart,
+                                                    ) {
+                                                        Text(
+                                                            text = category.name,
+                                                            style = MaterialTheme.typography.titleMedium,
+                                                            fontWeight = FontWeight.Bold,
+                                                            color = com.listenit.music.ui.theme.LiquidFrequency.FrostedWhite,
+                                                        )
+                                                    }
+                                                }
+                                            }
+                                            if (pair.size == 1) {
+                                                Spacer(Modifier.weight(1f))
+                                            }
+                                        }
                                     }
                                 }
                             }

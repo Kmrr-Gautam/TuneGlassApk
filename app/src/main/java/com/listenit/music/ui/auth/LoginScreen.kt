@@ -58,10 +58,17 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
+import androidx.compose.foundation.clickable
+import androidx.compose.material.icons.filled.AddPhotoAlternate
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.listenit.music.R
 import com.listenit.music.data.model.AuthState
 import com.listenit.music.ui.common.FrequencyOrb
+import com.listenit.music.ui.common.ProfileAvatarPickerSheet
+import com.listenit.music.ui.common.UserAvatarDisplay
 import com.listenit.music.ui.common.adaptiveContentWidth
+import com.listenit.music.ui.settings.SettingsViewModel
 import com.listenit.music.ui.theme.LiquidFrequency
 import com.listenit.music.ui.theme.liquidGlassPanel
 
@@ -83,8 +90,11 @@ fun LoginScreen(
     onRestoreBackupAndSignIn: (String) -> Unit,
     onDismissError: () -> Unit,
     onOpenDownloads: (() -> Unit)? = null,
+    settingsViewModel: SettingsViewModel = hiltViewModel(),
 ) {
     val context = LocalContext.current
+    val misc by settingsViewModel.misc.collectAsStateWithLifecycle()
+    var showAvatarPicker by remember { mutableStateOf(false) }
     var restoreReadError by remember { mutableStateOf<String?>(null) }
     val restoreBackupLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.OpenDocument(),
@@ -280,6 +290,29 @@ fun LoginScreen(
                                         Text("Restore Backup & Login", color = LiquidFrequency.FrostedWhite)
                                     }
 
+                                    Spacer(Modifier.height(10.dp))
+
+                                    OutlinedButton(
+                                        onClick = { showAvatarPicker = true },
+                                        enabled = !busy,
+                                        shape = RoundedCornerShape(20.dp),
+                                        border = LiquidFrequency.glassBorder(),
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .height(52.dp),
+                                    ) {
+                                        Icon(
+                                            Icons.Filled.AddPhotoAlternate,
+                                            contentDescription = null,
+                                            tint = LiquidFrequency.ElectricCyan,
+                                            modifier = Modifier.padding(end = 8.dp),
+                                        )
+                                        Text(
+                                            if (misc.userProfileAvatar.isNotBlank()) "Change Avatar / Mini Doodle" else "Set Profile Photo / Mini Doodle",
+                                            color = LiquidFrequency.FrostedWhite,
+                                        )
+                                    }
+
                                     Spacer(Modifier.height(14.dp))
 
                                     Text(
@@ -337,6 +370,16 @@ fun LoginScreen(
                     }
                 }
             }
+        }
+
+        if (showAvatarPicker) {
+            ProfileAvatarPickerSheet(
+                currentAvatar = misc.userProfileAvatar,
+                onSelectAvatar = { newAvatar ->
+                    settingsViewModel.setUserProfileAvatar(newAvatar)
+                },
+                onDismiss = { showAvatarPicker = false },
+            )
         }
     }
 }

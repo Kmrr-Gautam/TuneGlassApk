@@ -15,89 +15,133 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 
 /**
- * Liquid Frequency: TuneGlass Design Language.
+ * Charcoal: TuneGlass Design Language (Redesign).
  *
- * Combines deep atmospheric obsidian darkness, translucent liquid-glass surfaces,
- * iridescent frequency gradients (Cyan, Ultraviolet, Coral), and fine luminous contours.
+ * Dark warm-charcoal backgrounds, muted sage green accent, dusty blue,
+ * warm beige and terracotta secondaries, fine warm-gray hairlines, and
+ * warm-white typography. Album artwork is the only saturated element.
+ *
+ * Token names are intentionally preserved from the previous "Liquid Frequency"
+ * palette so that every reference site across the codebase continues to
+ * compile without changes — only the colour values are updated.
  */
 object LiquidFrequency {
-    // Core controlled palette
-    val Obsidian = Color(0xFF080911)
-    val MidnightIndigo = Color(0xFF11152B)
-    val ElectricCyan = Color(0xFF69F0F0)
-    val Ultraviolet = Color(0xFF9875FF)
-    val SoftCoral = Color(0xFFFF8F9D)
-    val FrostedWhite = Color(0xFFF4F3FF)
-    val MutedLavender = Color(0xFFA7A6C4)
+    // ── Core Charcoal Background Layers ───────────────────────────────────
+    /** Deepest background — main scaffold background. */
+    val Obsidian = Color(0xFF191B19)
 
-    // Derived surface tints
-    val GlassSubstrate = Color(0xFF0D1022).copy(alpha = 0.55f)
-    val GlassSurface = Color(0xFF121630).copy(alpha = 0.65f)
-    val GlassSurfaceElevated = Color(0xFF181C3D).copy(alpha = 0.75f)
+    /** Card/surface layer — slightly lighter charcoal. */
+    val MidnightIndigo = Color(0xFF242624)
 
-    // Iridescent Gradients
-    val IridescentGradient = Brush.linearGradient(
+    // ── Accent Palette ────────────────────────────────────────────────────
+    /** Primary accent: muted sage green. */
+    val ElectricCyan = Color(0xFF91A68B)
+
+    /** Secondary accent: dusty muted blue. */
+    val Ultraviolet = Color(0xFF718D9B)
+
+    /** Tertiary accent: warm terracotta. */
+    val SoftCoral = Color(0xFFAD7561)
+
+    /** Quaternary accent: warm beige (used for featured/golden elements). */
+    val WarmBeige = Color(0xFFC6AE86)
+
+    // ── Typography ────────────────────────────────────────────────────────
+    /** Primary text — warm white. */
+    val FrostedWhite = Color(0xFFF3F1EB)
+
+    /** Secondary text — muted gray-green. */
+    val MutedLavender = Color(0xFFA5A8A2)
+
+    // ── Elevated Surface Tints ────────────────────────────────────────────
+    /** Slightly elevated card surface. */
+    val GlassSubstrate = Color(0xFF2D302D)
+
+    /** Mid-elevation surface. */
+    val GlassSurface = Color(0xFF333736)
+
+    /** Highest card elevation surface. */
+    val GlassSurfaceElevated = Color(0xFF3A3D3A)
+
+    // ── Subtle Gradient Brushes ───────────────────────────────────────────
+    /** Warm charcoal top-to-bottom gradient for ambient depth. */
+    val DeepObsidianGradient: Brush = Brush.verticalGradient(
+        colors = listOf(
+            Obsidian,
+            Color(0xFF1E211E),
+            Obsidian,
+        ),
+    )
+
+    /** Subtle atmospheric charcoal gradient. */
+    val SubtleAtmosphericGradient: Brush = Brush.verticalGradient(
+        colors = listOf(
+            Color(0xFF191B19),
+            Color(0xFF1F221F),
+            Color(0xFF191B19),
+        ),
+    )
+
+    /**
+     * Warm sage-tinted multi-stop gradient — replaces the old cyan/violet/coral
+     * iridescent gradient. Used for accent highlights and decorative strokes.
+     */
+    val IridescentGradient: Brush = Brush.linearGradient(
         colors = listOf(ElectricCyan, Ultraviolet, SoftCoral),
         start = Offset.Zero,
         end = Offset(400f, 400f),
     )
 
-    val FrequencyHorizontalGradient = Brush.horizontalGradient(
+    val FrequencyHorizontalGradient: Brush = Brush.horizontalGradient(
         colors = listOf(ElectricCyan, Ultraviolet, SoftCoral),
     )
 
-    val DeepObsidianGradient = Brush.verticalGradient(
-        colors = listOf(
-            Obsidian,
-            MidnightIndigo.copy(alpha = 0.85f),
-            Obsidian,
-        ),
-    )
-
-    val SubtleAtmosphericGradient = Brush.verticalGradient(
-        colors = listOf(
-            Color(0xFF0A0C16),
-            Color(0xFF10142A),
-            Color(0xFF080911),
-        ),
-    )
-
-    // Glass Hairline Border Gradients
-    val GlassBorderBrush = Brush.verticalGradient(
-        0f to FrostedWhite.copy(alpha = 0.28f),
-        0.35f to ElectricCyan.copy(alpha = 0.18f),
-        0.75f to Ultraviolet.copy(alpha = 0.10f),
+    // ── Hairline Border Brushes ───────────────────────────────────────────
+    /**
+     * Default hairline: warm-gray top, fading to transparent — matches the
+     * reference image's thin, restrained card borders.
+     */
+    val GlassBorderBrush: Brush = Brush.verticalGradient(
+        0f to FrostedWhite.copy(alpha = 0.18f),
+        0.40f to MutedLavender.copy(alpha = 0.10f),
         1f to Color.Transparent,
     )
 
-    val GlassBorderActiveBrush = Brush.linearGradient(
-        0f to ElectricCyan.copy(alpha = 0.65f),
-        0.5f to Ultraviolet.copy(alpha = 0.45f),
-        1f to SoftCoral.copy(alpha = 0.35f),
+    /**
+     * Active hairline: sage green to dusty blue — used on the selected
+     * nav item and focused interactive elements.
+     */
+    val GlassBorderActiveBrush: Brush = Brush.linearGradient(
+        0f to ElectricCyan.copy(alpha = 0.70f),
+        0.5f to Ultraviolet.copy(alpha = 0.50f),
+        1f to SoftCoral.copy(alpha = 0.30f),
     )
 
-    fun glassBorder(active: Boolean = false, strokeWidth: Dp = 1.dp): BorderStroke {
-        return BorderStroke(
+    fun glassBorder(active: Boolean = false, strokeWidth: Dp = 1.dp): BorderStroke =
+        BorderStroke(
             width = strokeWidth,
             brush = if (active) GlassBorderActiveBrush else GlassBorderBrush,
         )
-    }
 }
 
+// ── Modifier Helpers ──────────────────────────────────────────────────────────
+
 /**
- * Modifier to apply a liquid-frequency frosted glass panel background with optional active border.
+ * Charcoal card panel: replaces the old glass-blur panel. Uses a solid
+ * charcoal background with a warm hairline border — matches the reference
+ * image's matte card aesthetic rather than the previous glossy glass look.
  */
 fun Modifier.liquidGlassPanel(
-    shape: Shape = RoundedCornerShape(22.dp),
+    shape: Shape = RoundedCornerShape(18.dp),
     isActive: Boolean = false,
-    alpha: Float = 0.62f,
+    alpha: Float = 1f,
     borderWidth: Dp = 1.dp,
 ): Modifier = this
     .clip(shape)
     .background(
         Brush.verticalGradient(
             0f to LiquidFrequency.GlassSurfaceElevated.copy(alpha = alpha),
-            1f to LiquidFrequency.GlassSubstrate.copy(alpha = alpha * 0.85f),
+            1f to LiquidFrequency.GlassSubstrate.copy(alpha = alpha),
         )
     )
     .border(

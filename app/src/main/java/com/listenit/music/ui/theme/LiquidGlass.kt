@@ -171,26 +171,28 @@ fun Modifier.canvasLiquidGlassChrome(shape: Shape): Modifier = drawWithCache {
         return@drawWithCache onDrawWithContent { drawContent() }
     }
     val outline = shape.createOutline(size, layoutDirection, this)
-    val substrate = Color(0xFF0C0E14).copy(alpha = 0.42f)
+    // Charcoal substrate: warm dark charcoal instead of cold indigo
+    val substrate = Color(0xFF242624).copy(alpha = 0.38f)
     val reflection = Brush.verticalGradient(
-        0f to Color.White.copy(alpha = 0.20f),
-        0.15f to Color.White.copy(alpha = 0.075f),
+        0f to Color.White.copy(alpha = 0.12f),
+        0.18f to Color.White.copy(alpha = 0.05f),
         0.50f to Color.Transparent,
-        1f to Color.Black.copy(alpha = 0.14f),
+        1f to Color.Black.copy(alpha = 0.10f),
         startY = 0f,
         endY = size.height,
     )
+    // Warm sage/beige refraction — replaces cold blue/pink
     val refraction = Brush.linearGradient(
-        0f to Color(0xFFB8D8FF).copy(alpha = 0.075f),
-        0.48f to Color.Transparent,
-        1f to Color(0xFFFFD8F0).copy(alpha = 0.055f),
+        0f to Color(0xFFA8C4A0).copy(alpha = 0.055f),   // sage tint
+        0.50f to Color.Transparent,
+        1f to Color(0xFFD4B896).copy(alpha = 0.040f),    // warm beige tint
         start = Offset.Zero,
         end = Offset(size.width, size.height),
     )
     val strokeWidth = 1.dp.toPx()
     val borderBrush = Brush.verticalGradient(
-        0f to Color.White.copy(alpha = 0.16f),
-        0.5f to Color.White.copy(alpha = 0.05f),
+        0f to Color.White.copy(alpha = 0.14f),
+        0.5f to Color.White.copy(alpha = 0.04f),
         1f to Color.Transparent,
         startY = 0f,
         endY = size.height,
