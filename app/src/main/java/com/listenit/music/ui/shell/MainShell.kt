@@ -117,8 +117,8 @@ class MainShellViewModel @Inject constructor(
 ) : ViewModel() {
     val updateInfo = appUpdateManager.updateInfo
 
-    fun dismissUpdate(version: String) {
-        appUpdateManager.dismissUpdate(version)
+    fun dismissUpdate() {
+        appUpdateManager.dismissUpdate()
     }
 
     fun openUpdate(context: android.content.Context) {
@@ -259,7 +259,7 @@ fun MainShell(
             UpdateAvailableDialog(
                 updateInfo = updateInfo,
                 onUpdate = { mainShellViewModel.downloadAndInstall(context) },
-                onDismiss = { mainShellViewModel.dismissUpdate(updateInfo.latestVersion) },
+                onDismiss = { mainShellViewModel.dismissUpdate() },
             )
         } else if (showWhatsNewPopup) {
             com.listenit.music.ui.common.WhatsNewDialog(

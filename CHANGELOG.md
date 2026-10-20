@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.1.7] - 2026-10-20
+
+### Fixed
+- **Reliable update prompts:** Bypass cached update metadata, compare all available metadata sources, and allow users to defer the update prompt without permanently hiding it.
+
 ## [1.1.6] - 2026-10-20
 
 ### Added

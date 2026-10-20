@@ -1,7 +1,7 @@
 {
-  "version": "1.1.6",
-  "versionCode": 8,
+  "version": "1.1.7",
+  "versionCode": 9,
   "downloadUrl": "https://github.com/Kmrr-Gautam/TuneGlassApk/raw/main/tuneglass.apk",
-  "releaseNotes": "Added a motion-sensitive tilt animation for the full-screen player poster, with a Settings toggle\nDiscover now recommends tracks by followed artists whose genres match your listening history\nChanging followed artists refreshes the Discover feed",
+  "releaseNotes": "Fixed update checks to fetch fresh GitHub metadata and show the update popup reliably\nThe update popup can be dismissed for the current session and will return on a later launch\nIncludes the full-screen poster tilt and followed-artist Discover feed from v1.1.6",
   "releaseUrl": "https://github.com/Kmrr-Gautam/TuneGlassApk/releases"
 }

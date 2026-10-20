@@ -16,6 +16,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import okhttp3.CacheControl
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import org.json.JSONObject
@@ -83,10 +84,11 @@ class AppUpdateManager @Inject constructor(
                 "https://raw.githubusercontent.com/Kmrr-Gautam/TuneGlassApk/main/version.json",
                 "https://tuneglass.vercel.app/version.json",
             )) {
-                if (resolvedVersion != null) break
                 runCatching {
                     val siteRequest = Request.Builder()
-                        .url(endpoint)
+                        .url("$endpoint?update_check=${System.currentTimeMillis()}")
+                        .cacheControl(CacheControl.FORCE_NETWORK)
+                        .header("Cache-Control", "no-cache")
                         .header("Accept", "application/json")
                         .header("User-Agent", "TuneGlass-Android")
                         .build()
@@ -97,10 +99,12 @@ class AppUpdateManager @Inject constructor(
                             val siteJson = JSONObject(body)
                             val ver = siteJson.optString("version", siteJson.optString("versionName", ""))
                             if (ver.isNotBlank()) {
-                                resolvedVersion = ver
-                                resolvedDownloadUrl = siteJson.optString("downloadUrl", "https://github.com/Kmrr-Gautam/TuneGlassApk/raw/main/tuneglass.apk")
-                                resolvedNotes = siteJson.optString("releaseNotes", siteJson.optString("notes", ""))
-                                resolvedReleaseUrl = siteJson.optString("releaseUrl", "https://github.com/Kmrr-Gautam/TuneGlassApk")
+                                if (resolvedVersion == null || isNewerVersion(ver, resolvedVersion.orEmpty())) {
+                                    resolvedVersion = ver
+                                    resolvedDownloadUrl = siteJson.optString("downloadUrl", "https://github.com/Kmrr-Gautam/TuneGlassApk/raw/main/tuneglass.apk")
+                                    resolvedNotes = siteJson.optString("releaseNotes", siteJson.optString("notes", ""))
+                                    resolvedReleaseUrl = siteJson.optString("releaseUrl", "https://github.com/Kmrr-Gautam/TuneGlassApk")
+                                }
                             }
                         }
                     }
@@ -146,10 +150,9 @@ class AppUpdateManager @Inject constructor(
             val currentVersion = getCurrentVersion()
             val cleanTag = (resolvedVersion ?: "").removePrefix("v").removePrefix("V")
             val hasNewer = if (cleanTag.isNotBlank()) isNewerVersion(cleanTag, currentVersion) else false
-            val dismissedVersion = prefs.getString("dismissed_version", null)
-            val isDismissed = dismissedVersion == cleanTag
+            val isDismissed = false
 
-            if (hasNewer && !isDismissed) {
+            if (hasNewer) {
                 val lastNotified = prefs.getString("last_notified_version", null)
                 if (lastNotified != cleanTag) {
                     showUpdateNotification(cleanTag, resolvedNotes)
@@ -175,9 +178,8 @@ class AppUpdateManager @Inject constructor(
         }
     }
 
-    fun dismissUpdate(version: String) {
-        val clean = version.removePrefix("v").removePrefix("V")
-        prefs.edit().putString("dismissed_version", clean).apply()
+    fun dismissUpdate() {
+        prefs.edit().remove("dismissed_version").apply()
         _updateInfo.update { it.copy(isDismissed = true) }
     }
 

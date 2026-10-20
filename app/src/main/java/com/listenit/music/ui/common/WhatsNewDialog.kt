@@ -51,6 +51,11 @@ data class ChangelogItem(
 
 val CURRENT_VERSION_CHANGELOG = listOf(
     ChangelogItem(
+        icon = "🔔",
+        title = "Reliable Update Prompts",
+        description = "Update checks now fetch fresh release information, and choosing Later no longer hides an update permanently.",
+    ),
+    ChangelogItem(
         icon = "🌀",
         title = "Motion-Sensitive Poster Tilt",
         description = "The full-screen player poster responds to phone movement. Enable or disable the effect in Settings.",
@@ -84,7 +89,7 @@ val CURRENT_VERSION_CHANGELOG = listOf(
 
 @Composable
 fun WhatsNewDialog(
-    versionName: String = "1.1.6",
+    versionName: String = "1.1.7",
     onDismiss: () -> Unit,
 ) {
     Dialog(
