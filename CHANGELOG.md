@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.1.10] - 2026-10-20
+
+### Changed
+- **Full-screen poster:** Removed the device-motion 3D tilt effect and its Settings toggle.
+
 ## [1.1.9] - 2026-10-20
 
 ### Fixed

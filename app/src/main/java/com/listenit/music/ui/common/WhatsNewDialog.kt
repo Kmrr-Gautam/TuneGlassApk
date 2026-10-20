@@ -61,19 +61,14 @@ val CURRENT_VERSION_CHANGELOG = listOf(
         description = "The app rechecks for updates when you return to it, so missed checks can recover without waiting for a reinstall.",
     ),
     ChangelogItem(
-        icon = "📱",
-        title = "Improved 3D Poster Tilt",
-        description = "The full-screen poster now responds more clearly to phone movement and works on devices using the accelerometer.",
+        icon = "🖼️",
+        title = "Steady Full-Screen Artwork",
+        description = "Removed motion-based poster tilt for a stable artwork display while listening.",
     ),
     ChangelogItem(
         icon = "🔔",
         title = "Reliable Update Prompts",
         description = "Update checks now fetch fresh release information, and choosing Later no longer hides an update permanently.",
-    ),
-    ChangelogItem(
-        icon = "🌀",
-        title = "Motion-Sensitive Poster Tilt",
-        description = "The full-screen player poster responds to phone movement. Enable or disable the effect in Settings.",
     ),
     ChangelogItem(
         icon = "🎧",
@@ -104,7 +99,7 @@ val CURRENT_VERSION_CHANGELOG = listOf(
 
 @Composable
 fun WhatsNewDialog(
-    versionName: String = "1.1.9",
+    versionName: String = "1.1.10",
     onDismiss: () -> Unit,
 ) {
     Dialog(

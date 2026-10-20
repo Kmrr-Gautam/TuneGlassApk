@@ -326,9 +326,6 @@ class SettingsViewModel @Inject constructor(
     fun setFullScreenPoster(enabled: Boolean) = launchSettingsAction("update full screen poster") {
         settingsPreferences.setFullScreenPoster(enabled)
     }
-    fun setTiltPosterAnimationEnabled(enabled: Boolean) = launchSettingsAction("update poster tilt animation") {
-        settingsPreferences.setTiltPosterAnimationEnabled(enabled)
-    }
     fun setDynamicIsland(enabled: Boolean) = launchSettingsAction("update dynamic island") {
         settingsPreferences.setDynamicIsland(enabled)
     }
