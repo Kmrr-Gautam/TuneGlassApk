@@ -560,7 +560,7 @@ class MusicPlaybackService : MediaBrowserServiceCompat() {
     }
 
     override fun onTaskRemoved(rootIntent: Intent?) {
-        musicPlayer.stopAndClear()
+        musicPlayer.persistPlaybackSessionForTaskRemoval()
         super.onTaskRemoved(rootIntent)
     }
 

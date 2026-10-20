@@ -1620,6 +1620,12 @@ class MusicPlayer @Inject constructor(
         applicationScope.launch(Dispatchers.IO) { WidgetUpdater.clear(appContext) }
         appContext.stopService(Intent(appContext, MusicPlaybackService::class.java))
     }
+
+    fun persistPlaybackSessionForTaskRemoval() = onMain {
+        if (!isCasting && playerDelegate.isInitialized()) refresh(player)
+        else persistPlaybackSession()
+    }
+
     fun removeQueueItem(index: Int) = onMain {
         if (isCasting) {
             val snapshot = _state.value

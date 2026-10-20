@@ -51,6 +51,16 @@ data class ChangelogItem(
 
 val CURRENT_VERSION_CHANGELOG = listOf(
     ChangelogItem(
+        icon = "▶️",
+        title = "Keep Your Song After Closing",
+        description = "Closing TuneGlass from Recents preserves playback and restores your current song when you reopen the app.",
+    ),
+    ChangelogItem(
+        icon = "🔄",
+        title = "Update Checks on Return",
+        description = "The app rechecks for updates when you return to it, so missed checks can recover without waiting for a reinstall.",
+    ),
+    ChangelogItem(
         icon = "📱",
         title = "Improved 3D Poster Tilt",
         description = "The full-screen poster now responds more clearly to phone movement and works on devices using the accelerometer.",
@@ -94,7 +104,7 @@ val CURRENT_VERSION_CHANGELOG = listOf(
 
 @Composable
 fun WhatsNewDialog(
-    versionName: String = "1.1.8",
+    versionName: String = "1.1.9",
     onDismiss: () -> Unit,
 ) {
     Dialog(

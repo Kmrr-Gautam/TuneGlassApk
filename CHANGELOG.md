@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.1.9] - 2026-10-20
+
+### Fixed
+- **Playback after closing the app:** Removing TuneGlass from Recents no longer stops and clears the active song; the current queue and position are saved for reopening.
+- **Update prompt retries:** Update checks retry when the app returns to the foreground, with checks throttled to avoid unnecessary network requests.
+
 ## [1.1.8] - 2026-10-20
 
 ### Fixed

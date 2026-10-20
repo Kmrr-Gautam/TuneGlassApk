@@ -4,11 +4,13 @@ import android.content.Context
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
+import android.os.SystemClock
 import android.provider.Settings
 import androidx.core.content.FileProvider
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -47,6 +49,9 @@ class AppUpdateManager @Inject constructor(
 ) {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
     private val prefs = context.getSharedPreferences("listenit_updates", Context.MODE_PRIVATE)
+    private val checkLock = Any()
+    private var lastCheckStartedAt = 0L
+    private var checkJob: Job? = null
 
     private val _updateInfo = MutableStateFlow(
         UpdateInfo(
@@ -66,7 +71,23 @@ class AppUpdateManager @Inject constructor(
     }
 
     fun checkForUpdate(isSilent: Boolean = false) {
+        startUpdateCheck(isSilent, force = true)
+    }
+
+    fun checkForUpdateIfNeeded() {
+        startUpdateCheck(isSilent = true, force = false)
+    }
+
+    private fun startUpdateCheck(isSilent: Boolean, force: Boolean) {
         scope.launch {
+            synchronized(checkLock) {
+                val now = SystemClock.elapsedRealtime()
+                if (checkJob?.isActive == true) return@launch
+                if (!force && now - lastCheckStartedAt < UPDATE_CHECK_INTERVAL_MS) return@launch
+                lastCheckStartedAt = now
+                checkJob = coroutineContext[Job]
+            }
+
             _updateInfo.update {
                 it.copy(
                     isChecking = true,
@@ -365,6 +386,10 @@ class AppUpdateManager @Inject constructor(
             if (r < c) return false
         }
         return false
+    }
+
+    private companion object {
+        const val UPDATE_CHECK_INTERVAL_MS = 5 * 60 * 1000L
     }
 
     private fun showUpdateNotification(version: String, notes: String) {

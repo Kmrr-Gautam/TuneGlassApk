@@ -66,6 +66,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -83,7 +84,10 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.zIndex
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.kyant.backdrop.backdrops.LayerBackdrop
 import com.kyant.backdrop.backdrops.rememberLayerBackdrop
@@ -119,6 +123,10 @@ class MainShellViewModel @Inject constructor(
 
     fun dismissUpdate() {
         appUpdateManager.dismissUpdate()
+    }
+
+    fun checkForUpdatesIfNeeded() {
+        appUpdateManager.checkForUpdateIfNeeded()
     }
 
     fun openUpdate(context: android.content.Context) {
@@ -189,6 +197,7 @@ fun MainShell(
     val pagerState = rememberPagerState(pageCount = { tabs.size })
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
     val updateInfo by mainShellViewModel.updateInfo.collectAsStateWithLifecycle()
     val showUpdateBanner = updateInfo.isUpdateAvailable && !updateInfo.isDismissed
     val navigationBackdrop = if (isLiquidGlassBackdropSupported()) rememberLayerBackdrop() else null
@@ -200,6 +209,16 @@ fun MainShell(
     }
     var showWhatsNewPopup by remember {
         mutableStateOf(whatsNewPrefs.getString("last_seen_version", "") != currentAppVersion)
+    }
+
+    DisposableEffect(lifecycleOwner, mainShellViewModel) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_START) {
+                mainShellViewModel.checkForUpdatesIfNeeded()
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
     }
 
     Box(Modifier.fillMaxSize()) {
