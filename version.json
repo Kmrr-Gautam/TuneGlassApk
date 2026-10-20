@@ -1,7 +1,7 @@
 {
-  "version": "1.1.7",
-  "versionCode": 9,
+  "version": "1.1.8",
+  "versionCode": 10,
   "downloadUrl": "https://github.com/Kmrr-Gautam/TuneGlassApk/raw/main/tuneglass.apk",
-  "releaseNotes": "Fixed update checks to fetch fresh GitHub metadata and show the update popup reliably\nThe update popup can be dismissed for the current session and will return on a later launch\nIncludes the full-screen poster tilt and followed-artist Discover feed from v1.1.6",
+  "releaseNotes": "Fixed full-screen poster 3D tilt using calibrated motion sensing and more visible perspective\nIncludes reliable update prompts, the followed-artist Discover feed, and all v1.1.6 features",
   "releaseUrl": "https://github.com/Kmrr-Gautam/TuneGlassApk/releases"
 }

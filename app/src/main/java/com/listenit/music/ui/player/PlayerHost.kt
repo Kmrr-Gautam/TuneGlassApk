@@ -1622,32 +1622,71 @@ private fun rememberPosterTilt(enabled: Boolean): Offset {
             onDispose {}
         } else {
             val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as? SensorManager
-            val rotationSensor = sensorManager?.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
+            val tiltSensor = sensorManager?.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)
+                ?: sensorManager?.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
+            var gravityX = 0f
+            var gravityY = 0f
+            var gravityZ = 0f
+            var hasGravity = false
+            var neutralPitch: Float? = null
+            var neutralRoll: Float? = null
             var filteredPitch = 0f
             var filteredRoll = 0f
             val rotationMatrix = FloatArray(9)
             val orientation = FloatArray(3)
             val listener = object : SensorEventListener {
                 override fun onSensorChanged(event: SensorEvent) {
-                    if (event.sensor.type != Sensor.TYPE_ROTATION_VECTOR) return
-                    SensorManager.getRotationMatrixFromVector(rotationMatrix, event.values)
-                    SensorManager.getOrientation(rotationMatrix, orientation)
+                    val pitch: Float
+                    val roll: Float
+                    if (event.sensor.type == Sensor.TYPE_ACCELEROMETER) {
+                        if (!hasGravity) {
+                            gravityX = event.values[0]
+                            gravityY = event.values[1]
+                            gravityZ = event.values[2]
+                            hasGravity = true
+                        } else {
+                            gravityX += (event.values[0] - gravityX) * 0.22f
+                            gravityY += (event.values[1] - gravityY) * 0.22f
+                            gravityZ += (event.values[2] - gravityZ) * 0.22f
+                        }
+                        pitch = Math.toDegrees(
+                            kotlin.math.atan2(
+                                -gravityY.toDouble(),
+                                kotlin.math.sqrt(gravityX * gravityX + gravityZ * gravityZ).toDouble(),
+                            ),
+                        ).toFloat()
+                        roll = Math.toDegrees(
+                            kotlin.math.atan2(
+                                gravityX.toDouble(),
+                                kotlin.math.sqrt(gravityY * gravityY + gravityZ * gravityZ).toDouble(),
+                            ),
+                        ).toFloat()
+                    } else if (event.sensor.type == Sensor.TYPE_ROTATION_VECTOR) {
+                        SensorManager.getRotationMatrixFromVector(rotationMatrix, event.values)
+                        SensorManager.getOrientation(rotationMatrix, orientation)
+                        pitch = orientation[1] * 180f / PI.toFloat()
+                        roll = orientation[2] * 180f / PI.toFloat()
+                    } else {
+                        return
+                    }
 
-                    val pitch = orientation[1] * 180f / PI.toFloat()
-                    val roll = orientation[2] * 180f / PI.toFloat()
-                    filteredPitch += (pitch - filteredPitch) * 0.18f
-                    filteredRoll += (roll - filteredRoll) * 0.18f
+                    val pitchBaseline = neutralPitch ?: pitch.also { neutralPitch = it }
+                    val rollBaseline = neutralRoll ?: roll.also { neutralRoll = it }
+                    val relativePitch = ((pitch - pitchBaseline + 540f) % 360f) - 180f
+                    val relativeRoll = ((roll - rollBaseline + 540f) % 360f) - 180f
+                    filteredPitch += (relativePitch - filteredPitch) * 0.28f
+                    filteredRoll += (relativeRoll - filteredRoll) * 0.28f
                     tilt = Offset(
-                        x = (-filteredPitch * 0.55f).coerceIn(-8f, 8f),
-                        y = (filteredRoll * 0.55f).coerceIn(-8f, 8f),
+                        x = (-filteredPitch * 1.15f).coerceIn(-16f, 16f),
+                        y = (filteredRoll * 1.15f).coerceIn(-16f, 16f),
                     )
                 }
 
                 override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) = Unit
             }
 
-            if (sensorManager != null && rotationSensor != null) {
-                sensorManager.registerListener(listener, rotationSensor, SensorManager.SENSOR_DELAY_UI)
+            if (sensorManager != null && tiltSensor != null) {
+                sensorManager.registerListener(listener, tiltSensor, SensorManager.SENSOR_DELAY_GAME)
             }
             onDispose {
                 sensorManager?.unregisterListener(listener)
@@ -1865,12 +1904,12 @@ private fun FullPlayer(
                             .height(artHeightDp)
                             .align(Alignment.TopCenter)
                             .graphicsLayer {
-                                scaleX = artScale * 1.04f
-                                scaleY = artScale * 1.04f
+                                scaleX = artScale * 1.10f
+                                scaleY = artScale * 1.10f
                                 translationX = shownArtworkX * 0.5f
                                 rotationX = shownPosterTiltX
                                 rotationY = shownPosterTiltY
-                                cameraDistance = 12f * density
+                                cameraDistance = 32f * density
                             },
                     ) {
                         LiquidCrossfadePoster(

@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.1.8] - 2026-10-20
+
+### Fixed
+- **Full-screen poster tilt:** Calibrate motion against the phone's initial position, use the accelerometer with a rotation-vector fallback, and strengthen the 3D perspective effect.
+
 ## [1.1.7] - 2026-10-20
 
 ### Fixed
