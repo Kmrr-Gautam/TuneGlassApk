@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.1.6] - 2026-10-20
+
+### Added
+- **Motion-sensitive poster tilt:** The full-screen player poster responds smoothly to device movement, with a persistent Settings toggle.
+- **Followed-artist Discover feed:** Discover recommends tracks by followed artists whose genres match the user's listening history and refreshes when followed artists change.
+
 ## [1.1.5] - 2026-10-20
 
 ### Changed

@@ -109,6 +109,8 @@ data class MiscSettings(
     /** When true (default), displays album artwork as a full-bleed full screen poster in the music player.
      *  When false, displays the album artwork normally as a square poster. */
     val fullScreenPoster: Boolean = true,
+    /** When true, the full-screen player poster tilts with device movement. */
+    val tiltPosterAnimationEnabled: Boolean = true,
     /** When true (default), shows a floating interactive dynamic island at the top on all Android devices. */
     val dynamicIslandEnabled: Boolean = true,
     /** When true (default), enables rich tactile haptic feedback on playback controls, sliders, and gestures. */
@@ -144,6 +146,7 @@ class SettingsPreferences @Inject constructor(
         val MUSIC_BAR_STYLE = stringPreferencesKey("lw_music_bar_style")
         val AUTO_OFFLINE_SAVE_ENABLED = booleanPreferencesKey("lw_auto_offline_save_enabled")
         val FULL_SCREEN_POSTER = booleanPreferencesKey("lw_full_screen_poster")
+        val TILT_POSTER_ANIMATION_ENABLED = booleanPreferencesKey("lw_tilt_poster_animation_enabled")
         val DYNAMIC_ISLAND = booleanPreferencesKey("tuneglass_dynamic_island")
         val HAPTIC_FEEDBACK_ENABLED = booleanPreferencesKey("lw_haptic_feedback_enabled")
     }
@@ -174,6 +177,7 @@ class SettingsPreferences @Inject constructor(
                 musicBarStyle = MusicBarStyle.fromId(p.readSafely(Keys.MUSIC_BAR_STYLE)),
                 autoOfflineSaveEnabled = p.readSafely(Keys.AUTO_OFFLINE_SAVE_ENABLED) ?: false,
                 fullScreenPoster = p.readSafely(Keys.FULL_SCREEN_POSTER) ?: true,
+                tiltPosterAnimationEnabled = p.readSafely(Keys.TILT_POSTER_ANIMATION_ENABLED) ?: true,
                 dynamicIslandEnabled = p.readSafely(Keys.DYNAMIC_ISLAND) ?: true,
                 hapticFeedbackEnabled = p.readSafely(Keys.HAPTIC_FEEDBACK_ENABLED) ?: true,
             )
@@ -193,6 +197,10 @@ class SettingsPreferences @Inject constructor(
 
     suspend fun setFullScreenPoster(enabled: Boolean) {
         dataStore.edit { it[Keys.FULL_SCREEN_POSTER] = enabled }
+    }
+
+    suspend fun setTiltPosterAnimationEnabled(enabled: Boolean) {
+        dataStore.edit { it[Keys.TILT_POSTER_ANIMATION_ENABLED] = enabled }
     }
 
     suspend fun setDynamicNowPlaying(enabled: Boolean) {

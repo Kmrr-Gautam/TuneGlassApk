@@ -2,6 +2,10 @@
 
 package com.listenit.music.ui.player
 
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
 import android.content.Context
 import android.content.Intent
 import android.graphics.drawable.BitmapDrawable
@@ -61,12 +65,13 @@ import androidx.compose.foundation.gestures.detectDragGesturesAfterLongPress
 import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.ui.zIndex
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import kotlin.math.roundToInt
+import kotlin.math.PI
 import androidx.compose.ui.geometry.CornerRadius
-import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
@@ -725,6 +730,7 @@ private fun ExpandedPlayer(
         isDownloading = isDownloading,
         onDownload = { currentTrack?.let(viewModel::downloadTrack) },
         fullScreenPoster = settings.fullScreenPoster,
+        tiltPosterAnimationEnabled = settings.tiltPosterAnimationEnabled,
     )
 }
 
@@ -1606,6 +1612,53 @@ private fun AddToPlaylistDialog(
 private enum class SeekDirection { REWIND, FORWARD }
 
 @Composable
+private fun rememberPosterTilt(enabled: Boolean): Offset {
+    val context = LocalContext.current
+    var tilt by remember { mutableStateOf(Offset.Zero) }
+
+    DisposableEffect(context, enabled) {
+        if (!enabled) {
+            tilt = Offset.Zero
+            onDispose {}
+        } else {
+            val sensorManager = context.getSystemService(Context.SENSOR_SERVICE) as? SensorManager
+            val rotationSensor = sensorManager?.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
+            var filteredPitch = 0f
+            var filteredRoll = 0f
+            val rotationMatrix = FloatArray(9)
+            val orientation = FloatArray(3)
+            val listener = object : SensorEventListener {
+                override fun onSensorChanged(event: SensorEvent) {
+                    if (event.sensor.type != Sensor.TYPE_ROTATION_VECTOR) return
+                    SensorManager.getRotationMatrixFromVector(rotationMatrix, event.values)
+                    SensorManager.getOrientation(rotationMatrix, orientation)
+
+                    val pitch = orientation[1] * 180f / PI.toFloat()
+                    val roll = orientation[2] * 180f / PI.toFloat()
+                    filteredPitch += (pitch - filteredPitch) * 0.18f
+                    filteredRoll += (roll - filteredRoll) * 0.18f
+                    tilt = Offset(
+                        x = (-filteredPitch * 0.55f).coerceIn(-8f, 8f),
+                        y = (filteredRoll * 0.55f).coerceIn(-8f, 8f),
+                    )
+                }
+
+                override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) = Unit
+            }
+
+            if (sensorManager != null && rotationSensor != null) {
+                sensorManager.registerListener(listener, rotationSensor, SensorManager.SENSOR_DELAY_UI)
+            }
+            onDispose {
+                sensorManager?.unregisterListener(listener)
+                tilt = Offset.Zero
+            }
+        }
+    }
+    return tilt
+}
+
+@Composable
 private fun FullPlayer(
     state: MusicPlayerState,
     progressState: StateFlow<PlaybackProgressState>,
@@ -1618,6 +1671,7 @@ private fun FullPlayer(
     crossfadeEnabled: Boolean = false,
     crossfadeSeconds: Int = 5,
     onToggleCrossfade: () -> Unit = {},
+    tiltPosterAnimationEnabled: Boolean = true,
     currentTab: FullPlayerTab,
     onTabChange: (FullPlayerTab) -> Unit,
     onRetryLyrics: () -> Unit,
@@ -1758,6 +1812,19 @@ private fun FullPlayer(
         animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessLow),
         label = "playerArtScale",
     )
+    val posterTilt = rememberPosterTilt(
+        enabled = tiltPosterAnimationEnabled && fullScreenPoster && currentTab == FullPlayerTab.NOW_PLAYING,
+    )
+    val shownPosterTiltX by animateFloatAsState(
+        targetValue = posterTilt.x,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMediumLow),
+        label = "posterTiltX",
+    )
+    val shownPosterTiltY by animateFloatAsState(
+        targetValue = posterTilt.y,
+        animationSpec = spring(dampingRatio = Spring.DampingRatioNoBouncy, stiffness = Spring.StiffnessMediumLow),
+        label = "posterTiltY",
+    )
     // The cover dissolves into its own deepest colour, never into flat black.
     val plateColor = androidx.compose.ui.graphics.lerp(Ink, ambientDeep, 0.38f)
 
@@ -1798,9 +1865,12 @@ private fun FullPlayer(
                             .height(artHeightDp)
                             .align(Alignment.TopCenter)
                             .graphicsLayer {
-                                scaleX = artScale
-                                scaleY = artScale
+                                scaleX = artScale * 1.04f
+                                scaleY = artScale * 1.04f
                                 translationX = shownArtworkX * 0.5f
+                                rotationX = shownPosterTiltX
+                                rotationY = shownPosterTiltY
+                                cameraDistance = 12f * density
                             },
                     ) {
                         LiquidCrossfadePoster(

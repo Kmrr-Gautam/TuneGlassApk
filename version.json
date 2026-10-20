@@ -1,7 +1,7 @@
 {
-  "version": "1.1.5",
-  "versionCode": 7,
+  "version": "1.1.6",
+  "versionCode": 8,
   "downloadUrl": "https://github.com/Kmrr-Gautam/TuneGlassApk/raw/main/tuneglass.apk",
-  "releaseNotes": "Redesigned Feed and Search screens with the new TuneGlass visual style\nAdded song options menu to the top Search result\nAdd to queue now places the selected song immediately after the currently playing song\nGitHub-hosted update metadata now takes priority for in-app update checks",
+  "releaseNotes": "Added a motion-sensitive tilt animation for the full-screen player poster, with a Settings toggle\nDiscover now recommends tracks by followed artists whose genres match your listening history\nChanging followed artists refreshes the Discover feed",
   "releaseUrl": "https://github.com/Kmrr-Gautam/TuneGlassApk/releases"
 }

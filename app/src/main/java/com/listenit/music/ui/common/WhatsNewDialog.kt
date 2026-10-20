@@ -51,6 +51,16 @@ data class ChangelogItem(
 
 val CURRENT_VERSION_CHANGELOG = listOf(
     ChangelogItem(
+        icon = "🌀",
+        title = "Motion-Sensitive Poster Tilt",
+        description = "The full-screen player poster responds to phone movement. Enable or disable the effect in Settings.",
+    ),
+    ChangelogItem(
+        icon = "🎧",
+        title = "Followed-Artist Discover Feed",
+        description = "Discover now focuses on tracks by followed artists whose genres match your listening history.",
+    ),
+    ChangelogItem(
         icon = "🎨",
         title = "Profile Avatars & Mini Doodles",
         description = "Choose any photo from your Gallery or pick from 10 exclusive colorful mini doodles (Groove, Melody, Cosmic, Lo-Fi, etc.).",
@@ -74,7 +84,7 @@ val CURRENT_VERSION_CHANGELOG = listOf(
 
 @Composable
 fun WhatsNewDialog(
-    versionName: String = "1.1.4",
+    versionName: String = "1.1.6",
     onDismiss: () -> Unit,
 ) {
     Dialog(

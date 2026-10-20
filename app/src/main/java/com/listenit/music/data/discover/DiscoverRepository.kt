@@ -3,10 +3,14 @@ package com.listenit.music.data.discover
 import android.util.Log
 import com.listenit.music.data.generate.GenerateRepository
 import com.listenit.music.data.generate.GeneratedTrack
+import com.listenit.music.data.generate.TasteProfile
 import com.listenit.music.data.generate.TasteProfileProvider
+import com.listenit.music.data.genre.GenreResolver
 import com.listenit.music.data.music.InnerTubeMusicApi
 import com.listenit.music.data.music.YouTubeMusicTrack
+import com.listenit.music.data.repository.FollowedArtistsRepository
 import com.listenit.music.data.ytmusic.YtMusicAuthManager
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
@@ -28,11 +32,7 @@ private const val MAX_TRACK_SEEDS = 6
 private const val DISCOVER_ARTIST_CAP = 3
 private const val MAX_SHOWN_KEYS = 3_000
 private const val SAVED_TRACK_SCORE_PENALTY = 22.0
-
-private val CURATED_GENRE_SEEDS = listOf(
-    "indie", "electronic", "synthwave", "rock", "alternative", "pop",
-    "hip-hop", "r&b", "chillwave", "dream pop", "shoegaze", "ambient", "jazz"
-)
+private val GENRE_NON_WORDS = Regex("[^a-z0-9]+")
 
 private data class TasteSeed(val track: GeneratedTrack, val weight: Int)
 private data class SourceBatch(val tracks: List<GeneratedTrack>, val weight: Int, val source: String)
@@ -48,6 +48,8 @@ class DiscoverRepository @Inject constructor(
     private val tasteProfileProvider: TasteProfileProvider,
     private val innerTube: InnerTubeMusicApi,
     private val ytAuth: YtMusicAuthManager,
+    private val followedArtistsRepository: FollowedArtistsRepository,
+    private val genreResolver: GenreResolver,
 ) {
     private fun YouTubeMusicTrack.toGeneratedTrack() = GeneratedTrack(
         name = title,
@@ -67,13 +69,93 @@ class DiscoverRepository @Inject constructor(
     fun getCachedFeed(): List<GeneratedTrack> = _feed.value
 
     suspend fun allowedCachedFeed(): List<GeneratedTrack> = mutex.withLock {
-        val allowed = generateRepository.filterRecommendationExclusions(_feed.value)
-        if (allowed.size != _feed.value.size) _feed.value = allowed
+        val profile = loadTasteProfile()
+        val followedArtistGenres = followedArtistGenres(profile)
+        val allowed = generateRepository.filterRecommendationExclusions(
+            _feed.value.filter { track ->
+                followedArtistGenres[track.artist.normalizedGenre()]?.isNotEmpty() == true
+            },
+        )
+        if (allowed != _feed.value) _feed.value = allowed
         allowed
     }
 
+    private suspend fun loadTasteProfile() = try {
+        tasteProfileProvider.get()
+    } catch (cancellation: CancellationException) {
+        throw cancellation
+    } catch (error: Exception) {
+        Log.w(TAG, "Unable to load listening history for Discover", error)
+        null
+    }
+
+    private fun String.normalizedGenre(): String =
+        lowercase().replace(GENRE_NON_WORDS, " ").trim().replace(Regex("\\s+"), " ")
+
+    private fun genresOverlap(first: String, second: String): Boolean {
+        val a = first.normalizedGenre()
+        val b = second.normalizedGenre()
+        if (a.isBlank() || b.isBlank()) return false
+        if (a == b) return true
+        val aTokens = a.split(' ').filter(String::isNotBlank).toSet()
+        val bTokens = b.split(' ').filter(String::isNotBlank).toSet()
+        return aTokens.intersect(bTokens).isNotEmpty()
+    }
+
+    private suspend fun followedArtistGenres(profile: TasteProfile?): Map<String, Set<String>> {
+        if (profile?.hasPersonalSignals != true) return emptyMap()
+
+        val playedGenres = profile.topTags
+            .map { it.normalizedGenre() }
+            .filter(String::isNotBlank)
+            .toMutableSet()
+        if (playedGenres.isEmpty()) {
+            val playedTracks = (
+                profile.recentTracksRaw +
+                    profile.topTracksRaw +
+                    profile.ytMusicRecentRaw +
+                    profile.ytMusicLikedRaw +
+                    profile.ytMusicFeedRaw
+                )
+                .distinctBy(GeneratedTrack::key)
+                .take(6)
+            val resolved = coroutineScope {
+                playedTracks.map { track ->
+                    async(Dispatchers.IO) {
+                        genreResolver.resolve(track.name, track.artist)
+                    }
+                }.awaitAll()
+            }
+            playedGenres += resolved.flatMap { genres ->
+                genres.split(',').map { it.normalizedGenre() }.filter(String::isNotBlank)
+            }
+        }
+        if (playedGenres.isEmpty()) return emptyMap()
+
+        return followedArtistsRepository.followedArtists.value
+            .mapNotNull { artist ->
+                val matchingGenres = artist.genres
+                    .filter { artistGenre -> playedGenres.any { playedGenre -> genresOverlap(artistGenre, playedGenre) } }
+                    .map { it.normalizedGenre() }
+                    .toSet()
+                artist.name.normalizedGenre()
+                    .takeIf { it.isNotBlank() && matchingGenres.isNotEmpty() }
+                    ?.let { it to matchingGenres }
+            }
+            .toMap()
+    }
+
+    private fun tracksFromFollowedArtists(
+        tracks: List<GeneratedTrack>,
+        followedArtistGenres: Map<String, Set<String>>,
+    ): List<GeneratedTrack> = tracks.filter {
+        followedArtistGenres[it.artist.normalizedGenre()]?.isNotEmpty() == true
+    }
+
     private suspend fun refillQueue() = coroutineScope {
-        val profile = runCatching { tasteProfileProvider.get() }.getOrNull()
+        val profile = loadTasteProfile()
+        val qualifiedFollowedArtists = followedArtistGenres(profile)
+        if (qualifiedFollowedArtists.isEmpty()) return@coroutineScope
         val jobs = mutableListOf<kotlinx.coroutines.Deferred<SourceBatch>>()
 
         val frontier = buildList {
@@ -142,9 +224,20 @@ class DiscoverRepository @Inject constructor(
             }
         }
 
-        val tagPool = profile?.topTags.orEmpty().ifEmpty {
-            if (profile?.hasPersonalSignals == true) emptySet() else CURATED_GENRE_SEEDS.toSet()
+        val followedArtistNames = followedArtistsRepository.followedArtists.value
+            .filter { it.name.normalizedGenre() in qualifiedFollowedArtists }
+            .take(6)
+        for (artist in followedArtistNames) {
+            jobs += async(Dispatchers.IO) {
+                SourceBatch(
+                    tracks = generateRepository.fetchArtistTopTracks(artist.name, 30),
+                    weight = 96,
+                    source = "followed:${artist.name.normalizedGenre()}",
+                )
+            }
         }
+
+        val tagPool = qualifiedFollowedArtists.values.flatten().toSet()
         val availableTags = tagPool
             .filter(String::isNotBlank)
             .distinct()
@@ -211,7 +304,7 @@ class DiscoverRepository @Inject constructor(
         }
 
         val allowedKeys = generateRepository.filterRecommendationExclusions(
-            candidates.values.map(RankedCandidate::track),
+            tracksFromFollowedArtists(candidates.values.map(RankedCandidate::track), qualifiedFollowedArtists),
         ).mapTo(mutableSetOf(), GeneratedTrack::key)
         val savedPlaylistKeys = generateRepository.savedPlaylistTrackKeys()
 
@@ -264,21 +357,17 @@ class DiscoverRepository @Inject constructor(
     /** Chunk-shuffled batch of [count] tracks for the feed — refills the
      *  underlying pool transparently when running low. */
     suspend fun nextBatch(count: Int = 8): List<GeneratedTrack> = mutex.withLock {
-        queue = generateRepository.filterRecommendationExclusions(queue).toMutableList()
+        val followedArtistGenres = followedArtistGenres(loadTasteProfile())
+        queue = generateRepository.filterRecommendationExclusions(
+            tracksFromFollowedArtists(queue, followedArtistGenres),
+        ).toMutableList()
+        _feed.value = generateRepository.filterRecommendationExclusions(
+            tracksFromFollowedArtists(_feed.value, followedArtistGenres),
+        )
         var attempts = 0
         while (queue.size < count && attempts < MAX_REFILL_ATTEMPTS) {
             refillQueue()
             attempts++
-        }
-
-        if (queue.size < count) {
-            try {
-                val queuedKeys = queue.mapTo(mutableSetOf(), GeneratedTrack::key)
-                val chartFallback = generateRepository.filterRecommendationExclusions(
-                    generateRepository.fetchChartTracks(count * 2),
-                ).filterNot { it.key in shownKeys || it.key in queuedKeys }
-                queue.addAll(chartFallback)
-            } catch (_: Exception) {}
         }
 
         val batch = generateRepository.preferPlaylistFreshness(
@@ -306,19 +395,14 @@ class DiscoverRepository @Inject constructor(
     /** "Surprise Me" — one genuinely random track from a fresh pull,
      *  distinct from the passive infinite-scroll batches. */
     suspend fun surpriseMe(): GeneratedTrack? = mutex.withLock {
-        queue = generateRepository.filterRecommendationExclusions(queue).toMutableList()
+        val followedArtistGenres = followedArtistGenres(loadTasteProfile())
+        queue = generateRepository.filterRecommendationExclusions(
+            tracksFromFollowedArtists(queue, followedArtistGenres),
+        ).toMutableList()
         var attempts = 0
         while (queue.isEmpty() && attempts < MAX_REFILL_ATTEMPTS) {
             refillQueue()
             attempts++
-        }
-        if (queue.isEmpty()) {
-            try {
-                val chartFallback = generateRepository.filterRecommendationExclusions(
-                    generateRepository.fetchChartTracks(10),
-                )
-                queue.addAll(chartFallback)
-            } catch (_: Exception) {}
         }
         val savedPlaylistKeys = generateRepository.savedPlaylistTrackKeys()
         val freshPool = queue.filterNot { it.key in savedPlaylistKeys }

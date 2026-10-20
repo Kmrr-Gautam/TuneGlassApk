@@ -7,6 +7,7 @@ import com.listenit.music.data.discover.DiscoverRepository
 import com.listenit.music.data.generate.GeneratedTrack
 import com.listenit.music.data.naming.PlaylistNamer
 import com.listenit.music.data.playlist.PlaylistRepository
+import com.listenit.music.data.repository.FollowedArtistsRepository
 import com.listenit.music.data.ytmusic.YtMusicAuthManager
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -40,10 +41,12 @@ class DiscoverViewModel @Inject constructor(
     private val playlistRepository: PlaylistRepository,
     private val artworkRepository: ArtworkRepository,
     private val ytMusicAuth: YtMusicAuthManager,
+    private val followedArtistsRepository: FollowedArtistsRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(DiscoverUiState())
     val uiState: StateFlow<DiscoverUiState> = _uiState.asStateFlow()
+    private var followedArtistSignature: Set<String>? = null
 
     init {
         viewModelScope.launch {
@@ -52,11 +55,32 @@ class DiscoverViewModel @Inject constructor(
             }
         }
         viewModelScope.launch {
-            repository.feed.collect { feed ->
+            repository.feed.collect {
+                val feed = repository.allowedCachedFeed()
                 if (feed.isNotEmpty() || _uiState.value.tracks.isNotEmpty()) {
                     _uiState.update {
                         it.copy(isLoading = if (feed.isNotEmpty()) false else it.isLoading, tracks = feed)
                     }
+                }
+            }
+        }
+        viewModelScope.launch {
+            followedArtistsRepository.followedArtists.collect { artists ->
+                val signature = artists.mapTo(mutableSetOf()) { it.name.trim().lowercase() }
+                val previous = followedArtistSignature
+                followedArtistSignature = signature
+                if (previous != null && previous != signature) {
+                    repository.reset()
+                    _uiState.update {
+                        it.copy(
+                            isLoading = true,
+                            isLoadingMore = false,
+                            tracks = emptyList(),
+                            error = null,
+                            endReached = false,
+                        )
+                    }
+                    loadInitial()
                 }
             }
         }

@@ -65,6 +65,7 @@ import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Fullscreen
 import androidx.compose.material.icons.filled.FullscreenExit
+import androidx.compose.material.icons.filled.ScreenRotation
 import androidx.compose.material.icons.filled.BubbleChart
 import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material.icons.filled.LibraryMusic
@@ -617,6 +618,20 @@ fun SettingsScreen(
                                 subtitle = if (misc.fullScreenPoster) "Full screen poster enabled" else "Normal poster enabled",
                                 checked = misc.fullScreenPoster,
                                 onCheckedChange = viewModel::setFullScreenPoster,
+                                position = GroupPosition.SINGLE,
+                            )
+                            SettingsToggleCard(
+                                icon = Icons.Filled.ScreenRotation,
+                                iconContainer = MaterialTheme.colorScheme.tertiaryContainer,
+                                iconTint = MaterialTheme.colorScheme.onTertiaryContainer,
+                                title = "Tilt Poster Animation",
+                                subtitle = if (misc.tiltPosterAnimationEnabled) {
+                                    "Tilt the full-screen poster as you move your phone"
+                                } else {
+                                    "Poster tilt animation disabled"
+                                },
+                                checked = misc.tiltPosterAnimationEnabled,
+                                onCheckedChange = viewModel::setTiltPosterAnimationEnabled,
                                 position = GroupPosition.SINGLE,
                             )
                             Spacer(Modifier.height(4.dp))

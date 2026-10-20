@@ -619,6 +619,26 @@ class GenerateRepository @Inject constructor(
         filterPlayable(filterRecommendationExclusions(blended)).take(limit)
     }
 
+    suspend fun fetchArtistTopTracks(artist: String, limit: Int): List<GeneratedTrack> = try {
+        val result = call(
+            mapOf(
+                "method" to "artist.gettoptracks",
+                "artist" to artist,
+                "limit" to limit.coerceIn(1, 100).toString(),
+            ),
+        )
+        filterPlayable(
+            filterRecommendationExclusions(
+                GenerateJson.normalise(result["toptracks"]?.jsonObject?.get("track")),
+            ),
+        ).take(limit.coerceAtLeast(0))
+    } catch (cancellation: CancellationException) {
+        throw cancellation
+    } catch (error: Exception) {
+        Log.d(TAG, "artist.gettoptracks unavailable for $artist", error)
+        emptyList()
+    }
+
     suspend fun fetchTagTracks(tag: String, limit: Int): List<GeneratedTrack> = kotlinx.coroutines.supervisorScope {
         val lastFm = async(Dispatchers.IO) {
             try {
