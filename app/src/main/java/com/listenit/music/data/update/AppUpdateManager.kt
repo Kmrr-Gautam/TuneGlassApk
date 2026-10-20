@@ -80,8 +80,8 @@ class AppUpdateManager @Inject constructor(
 
             // 1. Check version.json endpoints (hosted website or GitHub raw repository)
             for (endpoint in listOf(
-                "https://tuneglass.vercel.app/version.json",
                 "https://raw.githubusercontent.com/Kmrr-Gautam/TuneGlassApk/main/version.json",
+                "https://tuneglass.vercel.app/version.json",
             )) {
                 if (resolvedVersion != null) break
                 runCatching {

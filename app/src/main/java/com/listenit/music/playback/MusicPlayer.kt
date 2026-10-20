@@ -1034,17 +1034,7 @@ class MusicPlayer @Inject constructor(
     }
 
     fun addToQueue(track: PlayableTrack) {
-        applicationScope.launch {
-            val enriched = runCatching { matchMetadata(track) }.getOrDefault(track)
-            withContext(Dispatchers.Main.immediate) {
-                if (isCasting) {
-                    _state.update { it.copy(queue = it.queue + enriched) }
-                    persistPlaybackSession()
-                } else {
-                    player.addMediaItem(enriched.toMediaItem())
-                }
-            }
-        }
+        playNext(track)
     }
 
     /** Adds the varied continuation loaded for a search-started track.

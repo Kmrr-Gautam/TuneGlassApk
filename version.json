@@ -1,7 +1,7 @@
 {
-  "version": "1.1.4",
-  "versionCode": 6,
+  "version": "1.1.5",
+  "versionCode": 7,
   "downloadUrl": "https://github.com/Kmrr-Gautam/TuneGlassApk/raw/main/tuneglass.apk",
-  "releaseNotes": "Profile photo customization: Pick images from Gallery or choose 10 colorful mini doodles\nTap profile avatar on Home to navigate directly to About & System in Settings\nCustom profile avatar setup added to Login and Onboarding pages\nRemoved Dynamic Island overlay for a clean uninterrupted full-screen experience\nReplaced sample name with generic 'XYZ' across onboarding\nLiquid Frequency Lens UI design overhaul with translucent frosted glass styling and tactile controls",
-  "releaseUrl": "https://github.com/Kmrr-Gautam/TuneGlassApk"
+  "releaseNotes": "Redesigned Feed and Search screens with the new TuneGlass visual style\nAdded song options menu to the top Search result\nAdd to queue now places the selected song immediately after the currently playing song\nGitHub-hosted update metadata now takes priority for in-app update checks",
+  "releaseUrl": "https://github.com/Kmrr-Gautam/TuneGlassApk/releases"
 }

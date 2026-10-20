@@ -83,6 +83,7 @@ import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -158,10 +159,14 @@ fun FeedScreen(
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val miscSettings by settingsViewModel.misc.collectAsStateWithLifecycle()
+    var localHour by remember { mutableIntStateOf(java.time.LocalTime.now().hour) }
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner, viewModel) {
         val observer = LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_START) viewModel.onVisible()
+            if (event == Lifecycle.Event.ON_START) {
+                localHour = java.time.LocalTime.now().hour
+                viewModel.onVisible()
+            }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
         onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
@@ -178,19 +183,14 @@ fun FeedScreen(
             spotlight != null || charts.isNotEmpty() || newReleases.isNotEmpty() || friends.isNotEmpty() ||
             followedArtists.isNotEmpty() || followedGenreSections.isNotEmpty()
     }
-    val greeting = remember {
-        when (java.time.LocalTime.now().hour) {
-            in 5..11 -> "Good morning"
-            in 12..16 -> "Good afternoon"
-            in 17..21 -> "Good evening"
-            else -> "Good night"
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(60_000)
+            localHour = java.time.LocalTime.now().hour
         }
     }
-    val formattedDate = remember {
-        try {
-            java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.ofPattern("EEEE, MMMM d"))
-        } catch (_: Exception) { "" }
-    }
+    val visualTheme = remember(localHour) { feedVisualTheme(localHour) }
+    var selectedMood by remember { mutableStateOf<String?>(null) }
     LaunchedEffect(state.error, hasFeedContent) {
         val error = state.error ?: return@LaunchedEffect
         if (hasFeedContent) {
@@ -207,9 +207,9 @@ fun FeedScreen(
         Column(
             modifier = Modifier
                 .fillMaxSize()
+                .background(Brush.verticalGradient(listOf(visualTheme.backgroundTop, visualTheme.backgroundBottom)))
                 .adaptiveContentWidth(maxWidth = 920.dp),
         ) {
-            // ── Reference Header: "Home" heading + profile icon aligned upper-right ──
             val displayName = state.feedData.userName?.takeIf(String::isNotBlank)
 
             Row(
@@ -222,34 +222,50 @@ fun FeedScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Column {
-                    Text(
-                        text = "Home",
-                        style = MaterialTheme.typography.titleLarge.copy(
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Bold,
-                            letterSpacing = (-0.4).sp,
-                        ),
-                        color = Color.White,
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(9.dp),
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.GraphicEq,
+                        contentDescription = null,
+                        tint = visualTheme.accent,
+                        modifier = Modifier.size(28.dp),
                     )
-                    if (!displayName.isNullOrBlank()) {
+                    Column {
                         Text(
-                            text = "$greeting, $displayName",
-                            style = MaterialTheme.typography.labelSmall.copy(
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Medium,
+                            text = "TuneGlass",
+                            style = MaterialTheme.typography.titleMedium.copy(
+                                fontSize = 17.sp,
+                                fontWeight = FontWeight.Bold,
                             ),
-                            color = Color.White.copy(alpha = 0.50f),
+                            color = Color.White,
+                        )
+                        Text(
+                            text = "Turn your mood into music",
+                            style = MaterialTheme.typography.labelSmall.copy(
+                                fontSize = 9.sp,
+                            ),
+                            color = Color.White.copy(alpha = 0.62f),
                         )
                     }
                 }
 
-                UserAvatarDisplay(
-                    avatar = miscSettings.userProfileAvatar,
-                    displayName = displayName,
-                    size = 36.dp,
-                    onClick = onOpenSettings,
-                )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = onOpenSearch) {
+                        Icon(
+                            imageVector = Icons.Filled.Search,
+                            contentDescription = "Search music",
+                            tint = Color.White.copy(alpha = 0.9f),
+                        )
+                    }
+                    UserAvatarDisplay(
+                        avatar = miscSettings.userProfileAvatar,
+                        displayName = displayName,
+                        size = 36.dp,
+                        onClick = onOpenSettings,
+                    )
+                }
             }
 
             PullToRefreshBox(
@@ -293,18 +309,42 @@ fun FeedScreen(
                     modifier = Modifier.fillMaxSize().safeHorizontalContentPadding(),
                     contentPadding = PaddingValues(
                         bottom = FloatingNavDefaults.contentBottomPadding(),
-                        top = 12.dp,
+                        top = 4.dp,
                     ),
-                    verticalArrangement = Arrangement.spacedBy(24.dp),
+                    verticalArrangement = Arrangement.spacedBy(18.dp),
                 ) {
 
+                    item(key = "greeting_hero") {
+                        GreetingHero(
+                            greeting = visualTheme.greeting,
+                            displayName = displayName ?: "there",
+                            subtitle = visualTheme.subtitle,
+                            supportingText = visualTheme.supportingText,
+                            artworkUrl = state.feedData.quickPicks.firstOrNull()?.artworkUrl
+                                ?: state.feedData.spotlight?.artworkUrl,
+                            accent = visualTheme.accent,
+                        )
+                    }
+
+                    item(key = "mood_selector") {
+                        MoodSelector(
+                            selectedMood = selectedMood,
+                            accent = visualTheme.accent,
+                            onMoodSelected = { mood ->
+                                selectedMood = mood
+                                viewModel.playDiscoveryQuery(mood, mood.lowercase())
+                            },
+                        )
+                    }
 
                     item(key = "spotlight_poster") {
                         MusicPosterSlideshow(
                             feedData = state.feedData,
                             onPlayInfiniteRadio = viewModel::playInfiniteRadio,
                             onPlayTracksQueue = viewModel::playTracksQueue,
+                            onTrackMenuClick = { menuTrack = it },
                             onOpenFeedPlaylist = onOpenFeedPlaylist,
+                            themeAccent = visualTheme.accent,
                         )
                     }
 
@@ -337,7 +377,7 @@ fun FeedScreen(
 
                     if (state.feedData.quickPicks.isNotEmpty()) {
                         item(key = "quick_picks") {
-                            val title = "Recommended"
+                            val title = "Made For You"
                             FeedSectionHeader(
                                 title = title,
                                 subtitle = null,
@@ -520,7 +560,7 @@ fun FeedScreen(
                     if (state.feedData.freshFinds.isNotEmpty()) {
                         item(key = "fresh_finds") {
                             FeedSectionHeader(
-                                title = "Fresh finds",
+                                title = "Recently Added",
                                 subtitle = "New tracks beyond your usual rotation",
                                 actionText = "Play all",
                                 actionIcon = Icons.Filled.PlayArrow,
@@ -672,7 +712,7 @@ fun FeedScreen(
                     if (state.feedData.charts.isNotEmpty()) {
                         item(key = "trending_charts") {
                             FeedSectionHeader(
-                                title = "Top Charts",
+                                title = "Trending Now",
                                 subtitle = null,
                                 actionText = "Play all",
                                 actionIcon = Icons.Filled.PlayArrow,
@@ -805,6 +845,188 @@ private fun relativeTime(uts: String?): String? {
     }
 }
 
+private data class FeedVisualTheme(
+    val greeting: String,
+    val subtitle: String,
+    val supportingText: String,
+    val accent: Color,
+    val backgroundTop: Color,
+    val backgroundBottom: Color,
+)
+
+private fun feedVisualTheme(hour: Int): FeedVisualTheme = when (hour) {
+    in 5..11 -> FeedVisualTheme(
+        greeting = "Good Morning",
+        subtitle = "New day, new vibes.",
+        supportingText = "What are you feeling today?",
+        accent = Color(0xFFFFB74D),
+        backgroundTop = Color(0xFF30251F),
+        backgroundBottom = Color(0xFF10151D),
+    )
+    in 12..17 -> FeedVisualTheme(
+        greeting = "Good Afternoon",
+        subtitle = "Take a break, play something you love.",
+        supportingText = "Find your daytime rhythm.",
+        accent = Color(0xFF54C7F5),
+        backgroundTop = Color(0xFF12364B),
+        backgroundBottom = Color(0xFF101722),
+    )
+    else -> FeedVisualTheme(
+        greeting = "Good Night",
+        subtitle = "Slow down.",
+        supportingText = "Let the music take over.",
+        accent = Color(0xFF9B8CFF),
+        backgroundTop = Color(0xFF14182D),
+        backgroundBottom = Color(0xFF090D17),
+    )
+}
+
+@Composable
+private fun GreetingHero(
+    greeting: String,
+    displayName: String,
+    subtitle: String,
+    supportingText: String,
+    artworkUrl: String?,
+    accent: Color,
+) {
+    val shape = RoundedCornerShape(22.dp)
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+            .height(138.dp)
+            .clip(shape)
+            .background(
+                Brush.horizontalGradient(
+                    colors = listOf(accent.copy(alpha = 0.24f), Color(0xFF17212C)),
+                ),
+            ),
+    ) {
+        if (!artworkUrl.isNullOrBlank()) {
+            AsyncImage(
+                model = artworkUrl,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize().alpha(0.34f),
+            )
+        }
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(
+                    Brush.horizontalGradient(
+                        colors = listOf(Color(0xFF0C121B).copy(alpha = 0.96f), Color(0xFF0C121B).copy(alpha = 0.26f)),
+                    ),
+                ),
+        )
+        Column(
+            modifier = Modifier
+                .align(Alignment.CenterStart)
+                .padding(horizontal = 18.dp, vertical = 14.dp),
+            verticalArrangement = Arrangement.spacedBy(2.dp),
+        ) {
+            Text(
+                text = "$greeting,",
+                style = MaterialTheme.typography.labelLarge,
+                color = Color.White.copy(alpha = 0.82f),
+            )
+            Text(
+                text = displayName,
+                style = MaterialTheme.typography.headlineSmall.copy(
+                    fontWeight = FontWeight.ExtraBold,
+                    letterSpacing = (-0.4).sp,
+                ),
+                color = Color.White,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(
+                    text = if (greeting == "Good Night") "☾" else "☀",
+                    color = accent,
+                    style = MaterialTheme.typography.titleSmall,
+                    modifier = Modifier.padding(end = 5.dp),
+                )
+                Text(
+                    text = subtitle,
+                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
+                    color = Color.White.copy(alpha = 0.9f),
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
+            }
+            Text(
+                text = supportingText,
+                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                color = Color.White.copy(alpha = 0.68f),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+            )
+        }
+    }
+}
+
+@Composable
+private fun MoodSelector(
+    selectedMood: String?,
+    accent: Color,
+    onMoodSelected: (String) -> Unit,
+) {
+    val moods = listOf(
+        "Chill" to Icons.Filled.MusicNote,
+        "Focus" to Icons.Filled.GraphicEq,
+        "Happy" to Icons.Filled.AutoAwesome,
+        "Sad" to Icons.Filled.Favorite,
+        "Workout" to Icons.Filled.Whatshot,
+        "Romantic" to Icons.Filled.Favorite,
+    )
+    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(
+            text = "Choose your mood",
+            style = MaterialTheme.typography.titleSmall.copy(fontWeight = FontWeight.Bold),
+            color = Color.White,
+            modifier = Modifier.padding(horizontal = 18.dp),
+        )
+        LazyRow(
+            contentPadding = PaddingValues(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+        ) {
+            items(moods, key = { it.first }) { (mood, icon) ->
+                val isSelected = selectedMood == mood
+                Surface(
+                    onClick = { onMoodSelected(mood) },
+                    shape = CircleShape,
+                    color = if (isSelected) accent.copy(alpha = 0.24f) else Color.White.copy(alpha = 0.06f),
+                    border = androidx.compose.foundation.BorderStroke(
+                        width = if (isSelected) 1.5.dp else 1.dp,
+                        color = if (isSelected) accent.copy(alpha = 0.9f) else Color.White.copy(alpha = 0.14f),
+                    ),
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 9.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                    ) {
+                        Icon(
+                            imageVector = icon,
+                            contentDescription = null,
+                            tint = if (isSelected) accent else Color.White.copy(alpha = 0.8f),
+                            modifier = Modifier.size(15.dp),
+                        )
+                        Text(
+                            text = mood,
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                            color = Color.White,
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
 private data class PosterSlide(
     val id: String,
     val badge: String,
@@ -815,6 +1037,7 @@ private data class PosterSlide(
     val accentColor: androidx.compose.ui.graphics.Color,
     val actionText: String = "Play Now",
     val onPlay: () -> Unit,
+    val onMore: (() -> Unit)? = null,
 )
 
 @Composable
@@ -822,7 +1045,9 @@ private fun MusicPosterSlideshow(
     feedData: com.listenit.music.data.feed.FeedData,
     onPlayInfiniteRadio: () -> Unit,
     onPlayTracksQueue: (List<YouTubeMusicTrack>, Int, String) -> Unit,
+    onTrackMenuClick: (YouTubeMusicTrack) -> Unit,
     onOpenFeedPlaylist: (String) -> Unit,
+    themeAccent: Color,
 ) {
     val liquidGlass = LocalLiquidGlass.current
     val haptics = LocalHapticFeedback.current
@@ -861,6 +1086,7 @@ private fun MusicPosterSlideshow(
                     accentColor = androidx.compose.ui.graphics.Color(0xFF7895A2),
                     actionText = "Play Anthem",
                     onPlay = { onPlayTracksQueue(feedData.quickPicks, 0, "Daily Anthem") },
+                    onMore = { onTrackMenuClick(topTrack) },
                 )
             )
         }
@@ -958,11 +1184,11 @@ private fun MusicPosterSlideshow(
                 color = liquidGlassContainerColor(MaterialTheme.colorScheme.surfaceContainer),
                 border = androidx.compose.foundation.BorderStroke(
                     1.dp,
-                    slide.accentColor.copy(alpha = 0.35f),
+                    themeAccent.copy(alpha = 0.4f),
                 ),
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(238.dp),
+                    .height(218.dp),
             ) {
                 Box(modifier = Modifier.fillMaxSize()) {
                     if (!slide.posterUrl.isNullOrBlank()) {
@@ -972,7 +1198,7 @@ private fun MusicPosterSlideshow(
                             contentScale = ContentScale.Crop,
                             modifier = Modifier
                                 .fillMaxSize()
-                                .alpha(0.40f),
+                                .alpha(0.52f),
                         )
                     }
 
@@ -984,7 +1210,7 @@ private fun MusicPosterSlideshow(
                                 Brush.verticalGradient(
                                     colors = listOf(
                                         androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.40f),
-                                        slide.accentColor.copy(alpha = 0.12f),
+                                        themeAccent.copy(alpha = 0.12f),
                                         MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.75f),
                                         MaterialTheme.colorScheme.surfaceContainer.copy(alpha = 0.98f),
                                     ),
@@ -1001,7 +1227,7 @@ private fun MusicPosterSlideshow(
                             .background(
                                 Brush.radialGradient(
                                     colors = listOf(
-                                        slide.accentColor.copy(alpha = 0.28f),
+                                        themeAccent.copy(alpha = 0.28f),
                                         androidx.compose.ui.graphics.Color.Transparent,
                                     ),
                                     center = androidx.compose.ui.geometry.Offset(800f, 100f),
@@ -1028,7 +1254,7 @@ private fun MusicPosterSlideshow(
                                 color = androidx.compose.ui.graphics.Color.Black.copy(alpha = 0.45f),
                                 border = androidx.compose.foundation.BorderStroke(
                                     1.dp,
-                                    slide.accentColor.copy(alpha = 0.55f),
+                                    themeAccent.copy(alpha = 0.55f),
                                 ),
                             ) {
                                 Row(
@@ -1039,7 +1265,7 @@ private fun MusicPosterSlideshow(
                                     Icon(
                                         slide.badgeIcon,
                                         contentDescription = null,
-                                        tint = slide.accentColor,
+                                        tint = themeAccent,
                                         modifier = Modifier.size(13.dp),
                                     )
                                     Text(
@@ -1051,21 +1277,39 @@ private fun MusicPosterSlideshow(
                                 }
                             }
 
-                            // Glass Tag
-                            Surface(
-                                shape = CircleShape,
-                                color = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.10f),
-                            ) {
-                                Text(
-                                    "TUNEGLASS HD",
-                                    style = MaterialTheme.typography.labelSmall.copy(
-                                        fontSize = 9.sp,
-                                        letterSpacing = 1.2.sp,
-                                    ),
-                                    fontWeight = FontWeight.Bold,
-                                    color = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.75f),
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                )
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Surface(
+                                    shape = CircleShape,
+                                    color = androidx.compose.ui.graphics.Color.White.copy(alpha = 0.10f),
+                                ) {
+                                    Text(
+                                        "${page + 1} / ${slides.size}",
+                                        style = MaterialTheme.typography.labelSmall.copy(
+                                            fontSize = 9.sp,
+                                            letterSpacing = 1.2.sp,
+                                        ),
+                                        fontWeight = FontWeight.Bold,
+                                        color = androidx.compose.ui.graphics.Color.White,
+                                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                    )
+                                }
+                                if (slide.onMore != null) {
+                                    IconButton(
+                                        onClick = slide.onMore,
+                                        modifier = Modifier
+                                            .padding(start = 4.dp)
+                                            .size(36.dp)
+                                            .clip(CircleShape)
+                                            .background(Color.Black.copy(alpha = 0.42f)),
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Filled.MoreVert,
+                                            contentDescription = "More options for ${slide.title}",
+                                            tint = Color.White,
+                                            modifier = Modifier.size(20.dp),
+                                        )
+                                    }
+                                }
                             }
                         }
 
@@ -1104,11 +1348,11 @@ private fun MusicPosterSlideshow(
                                     },
                                     shape = CircleShape,
                                     colors = ButtonDefaults.buttonColors(
-                                        containerColor = slide.accentColor,
+                                        containerColor = themeAccent,
                                         contentColor = androidx.compose.ui.graphics.Color.White,
                                     ),
-                                    contentPadding = PaddingValues(horizontal = 22.dp, vertical = 10.dp),
-                                    modifier = Modifier.height(42.dp),
+                                    contentPadding = PaddingValues(horizontal = 18.dp, vertical = 8.dp),
+                                    modifier = Modifier.height(38.dp),
                                 ) {
                                     Icon(Icons.Filled.PlayArrow, contentDescription = null, modifier = Modifier.size(18.dp))
                                     Spacer(Modifier.width(6.dp))
@@ -1338,148 +1582,82 @@ private fun QuickTilesGrid(
     tiles: List<FeedQuickTile>,
     onTileClick: (FeedQuickTile) -> Unit,
 ) {
-    val sizeClass = rememberWindowSizeClass()
-    val columns = when (sizeClass) {
-        WindowSizeClass.COMPACT -> 2
-        WindowSizeClass.MEDIUM -> 3
-        WindowSizeClass.EXPANDED -> 4
-    }
-    val tileLimit = when (sizeClass) {
-        WindowSizeClass.COMPACT -> 6
-        WindowSizeClass.MEDIUM -> 6
-        WindowSizeClass.EXPANDED -> 8
-    }
-    val rows = remember(tiles, columns, tileLimit) { tiles.take(tileLimit).chunked(columns) }
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(10.dp),
+    LazyRow(
+        contentPadding = PaddingValues(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.spacedBy(10.dp),
     ) {
-        rows.forEach { rowItems ->
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(10.dp),
-            ) {
-                rowItems.forEach { tile ->
-                    QuickTileCard(
-                        tile = tile,
-                        modifier = Modifier.weight(1f),
-                        onClick = { onTileClick(tile) },
-                    )
-                }
-                val remaining = columns - rowItems.size
-                if (remaining > 0) {
-                    repeat(remaining) {
-                        Spacer(Modifier.weight(1f))
-                    }
-                }
-            }
+        items(tiles, key = { it.playlistId ?: it.localPlaylistId?.toString() ?: it.title }) { tile ->
+            QuickTileCard(
+                tile = tile,
+                modifier = Modifier.width(88.dp),
+                onClick = { onTileClick(tile) },
+            )
         }
     }
 }
 
 @Composable
 private fun QuickTileCard(tile: FeedQuickTile, modifier: Modifier = Modifier, onClick: () -> Unit) {
-    val liquidGlass = LocalLiquidGlass.current
-    val tileShape = RoundedCornerShape(18.dp)
+    val tileShape = RoundedCornerShape(16.dp)
     LiquidGlassSurface(
-        glassModifier = Modifier.liquidGlassChrome(tileShape, liquidGlass),
+        glassModifier = Modifier.liquidGlassChrome(tileShape, LocalLiquidGlass.current),
         onClick = onClick,
         shape = tileShape,
         color = liquidGlassContainerColor(
             if (tile.isLiked) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.55f)
-            else MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.75f),
+            else MaterialTheme.colorScheme.surfaceContainerHigh.copy(alpha = 0.72f),
         ),
-        border = androidx.compose.foundation.BorderStroke(
-            1.dp,
-            Color.White.copy(alpha = 0.08f),
-        ),
-        modifier = modifier
-            .height(64.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, Color.White.copy(alpha = 0.1f)),
+        modifier = modifier.height(100.dp),
     ) {
-        Row(
-            verticalAlignment = Alignment.CenterVertically,
-            modifier = Modifier.fillMaxSize().padding(horizontal = 10.dp, vertical = 8.dp),
+        Column(
+            modifier = Modifier.fillMaxSize().padding(horizontal = 7.dp, vertical = 8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(6.dp),
         ) {
             Box(
                 modifier = Modifier
-                    .size(46.dp)
+                    .size(48.dp)
                     .clip(RoundedCornerShape(12.dp))
-                    .background(
-                        if (tile.isLiked) MaterialTheme.colorScheme.primary.copy(alpha = 0.25f)
-                        else MaterialTheme.colorScheme.surfaceContainerHighest
-                    ),
+                    .background(MaterialTheme.colorScheme.surfaceContainerHighest),
                 contentAlignment = Alignment.Center,
             ) {
-                if (tile.isLiked) {
-                    Icon(
+                when {
+                    tile.isLiked -> Icon(
                         Icons.Filled.Favorite,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(22.dp),
                     )
-                } else if (!tile.artworkUrl.isNullOrBlank()) {
-                    AsyncImage(
+                    !tile.artworkUrl.isNullOrBlank() -> AsyncImage(
                         model = tile.artworkUrl,
                         contentDescription = null,
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize(),
                     )
-                } else if (tile.collection == "new_releases") {
-                    Icon(
+                    tile.collection == "new_releases" -> Icon(
                         Icons.Filled.NewReleases,
                         contentDescription = null,
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(22.dp),
                     )
-                } else {
-                    Icon(
+                    else -> Icon(
                         Icons.Filled.MusicNote,
                         contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
                         modifier = Modifier.size(22.dp),
                     )
                 }
             }
-            Spacer(Modifier.width(10.dp))
-            Column(
-                verticalArrangement = Arrangement.Center,
-                modifier = Modifier.weight(1f),
-            ) {
-                Text(
-                    text = tile.title,
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-                Text(
-                    text = tile.subtitle ?: if (tile.actionVideoId != null) "Track" else "Playlist",
-                    style = MaterialTheme.typography.bodySmall.copy(fontSize = 11.sp),
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f),
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis,
-                )
-            }
-            if (tile.actionVideoId != null) {
-                Box(
-                    modifier = Modifier
-                        .padding(end = 4.dp)
-                        .size(30.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Icon(
-                        Icons.Filled.PlayArrow,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(16.dp),
-                    )
-                }
-            }
+            Text(
+                text = tile.title,
+                style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp),
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                textAlign = TextAlign.Center,
+            )
         }
     }
 }

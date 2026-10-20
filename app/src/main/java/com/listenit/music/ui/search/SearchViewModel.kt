@@ -11,6 +11,9 @@ import com.listenit.music.playback.MusicPlayer
 import com.listenit.music.playback.PlayableTrack
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.async
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -30,6 +33,7 @@ data class SearchUiState(
     val suggestions: List<String> = emptyList(),
     val recentSearches: List<String> = emptyList(),
     val isShowingSuggestions: Boolean = false,
+    val allResults: Boolean = true,
 )
 
 /**
@@ -48,6 +52,7 @@ class SearchViewModel @Inject constructor(
 
     private var debounceJob: Job? = null
     private var suggestionsJob: Job? = null
+    private var activeSearchJob: Job? = null
     private var searchQueueJob: Job? = null
     private var lastIssuedQuery: String = ""
 
@@ -57,6 +62,7 @@ class SearchViewModel @Inject constructor(
                 _uiState.update { it.copy(recentSearches = history) }
             }
         }
+
     }
 
     fun setQuery(query: String) {
@@ -65,6 +71,7 @@ class SearchViewModel @Inject constructor(
         suggestionsJob?.cancel()
 
         if (query.isBlank()) {
+            activeSearchJob?.cancel()
             _uiState.update {
                 it.copy(
                     status = SearchStatus.IDLE,
@@ -88,15 +95,17 @@ class SearchViewModel @Inject constructor(
         // Full search results debounce (400ms)
         debounceJob = viewModelScope.launch {
             delay(400)
-            runSearch(query, saveToHistory = false)
+            activeSearchJob?.cancel()
+            activeSearchJob = launch { runSearch(query, saveToHistory = false) }
         }
     }
 
     fun setTab(tab: SearchTab) {
-        if (_uiState.value.tab == tab) return
+        if (_uiState.value.tab == tab && !_uiState.value.allResults) return
         _uiState.update {
             it.copy(
                 tab = tab,
+                allResults = false,
                 isShowingSuggestions = false,
                 results = emptyList(),
                 status = if (it.query.isBlank()) SearchStatus.IDLE else SearchStatus.LOADING,
@@ -106,7 +115,27 @@ class SearchViewModel @Inject constructor(
         if (q.isNotBlank()) {
             debounceJob?.cancel()
             suggestionsJob?.cancel()
-            viewModelScope.launch { runSearch(q, saveToHistory = false) }
+            activeSearchJob?.cancel()
+            activeSearchJob = viewModelScope.launch { runSearch(q, saveToHistory = false) }
+        }
+    }
+
+    fun setAllResults() {
+        if (_uiState.value.allResults) return
+        _uiState.update {
+            it.copy(
+                allResults = true,
+                isShowingSuggestions = false,
+                results = emptyList(),
+                status = if (it.query.isBlank()) SearchStatus.IDLE else SearchStatus.LOADING,
+            )
+        }
+        val query = _uiState.value.query
+        if (query.isNotBlank()) {
+            debounceJob?.cancel()
+            suggestionsJob?.cancel()
+            activeSearchJob?.cancel()
+            activeSearchJob = viewModelScope.launch { runSearch(query, saveToHistory = false) }
         }
     }
 
@@ -121,6 +150,7 @@ class SearchViewModel @Inject constructor(
         if (trimmed.isBlank()) return
         debounceJob?.cancel()
         suggestionsJob?.cancel()
+        activeSearchJob?.cancel()
         historyRepository.add(trimmed)
         _uiState.update {
             it.copy(
@@ -128,7 +158,7 @@ class SearchViewModel @Inject constructor(
                 isShowingSuggestions = false,
             )
         }
-        viewModelScope.launch { runSearch(trimmed, saveToHistory = true) }
+        activeSearchJob = viewModelScope.launch { runSearch(trimmed, saveToHistory = true) }
     }
 
     fun removeRecentSearch(query: String) {
@@ -145,7 +175,7 @@ class SearchViewModel @Inject constructor(
 
     fun playResult(item: SearchResultItem) {
         searchQueueJob?.cancel()
-        val tab = _uiState.value.tab
+        val tab = item.resultTab ?: _uiState.value.tab
         when (tab) {
             SearchTab.TRACKS -> {
                 val selected = PlayableTrack(
@@ -177,25 +207,40 @@ class SearchViewModel @Inject constructor(
     }
 
     private suspend fun runSearch(query: String, saveToHistory: Boolean) {
-        val tab = _uiState.value.tab
+        val selectedTab = _uiState.value.tab
+        val allResults = _uiState.value.allResults
         lastIssuedQuery = query
         _uiState.update { it.copy(status = SearchStatus.LOADING) }
         if (saveToHistory) {
             historyRepository.add(query)
         }
         try {
-            val results = repository.search(tab, query)
+            val results = if (allResults) {
+                coroutineScope {
+                    listOf(SearchTab.TRACKS, SearchTab.ARTISTS, SearchTab.PLAYLISTS, SearchTab.ALBUMS)
+                        .map { tab -> async { repository.search(tab, query) } }
+                        .flatMap { it.await() }
+                }
+            } else {
+                repository.search(selectedTab, query)
+            }
             // Stale-response guard: discard if the user has typed something
             // new since this call was issued.
-            if (lastIssuedQuery != query || _uiState.value.query != query || _uiState.value.tab != tab) return
+            if (lastIssuedQuery != query || _uiState.value.query != query ||
+                _uiState.value.tab != selectedTab || _uiState.value.allResults != allResults
+            ) return
             _uiState.update {
                 it.copy(
                     status = if (results.isEmpty()) SearchStatus.EMPTY else SearchStatus.RESULTS,
                     results = results,
                 )
             }
+        } catch (e: CancellationException) {
+            throw e
         } catch (e: Exception) {
-            if (lastIssuedQuery != query || _uiState.value.query != query || _uiState.value.tab != tab) return
+            if (lastIssuedQuery != query || _uiState.value.query != query ||
+                _uiState.value.tab != selectedTab || _uiState.value.allResults != allResults
+            ) return
             _uiState.update { it.copy(status = SearchStatus.EMPTY, results = emptyList()) }
         }
     }
@@ -203,6 +248,7 @@ class SearchViewModel @Inject constructor(
     fun clearQuery() {
         debounceJob?.cancel()
         suggestionsJob?.cancel()
+        activeSearchJob?.cancel()
         _uiState.update {
             it.copy(
                 query = "",

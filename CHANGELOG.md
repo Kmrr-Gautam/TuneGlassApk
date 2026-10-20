@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.5] - 2026-10-20
+
+### Changed
+- **Feed and Search UI refresh:** Redesigned both screens while retaining existing music data, search, navigation, and playback behavior.
+- **Play Next queue behavior:** Adding a song to the queue now places it immediately after the currently playing song.
+- **Update checks:** GitHub-hosted version metadata is checked before the website copy so releases published to the repository are detected promptly.
+
 ## [1.1.4] - 2026-10-15
 
 ### Added

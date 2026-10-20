@@ -25,6 +25,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -41,6 +42,7 @@ import androidx.compose.material.icons.filled.Explore
 import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.MusicNote
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.PersonRemove
@@ -59,7 +61,10 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
@@ -81,6 +86,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.listenit.music.data.search.SearchResultItem
 import com.listenit.music.data.search.SearchTab
 import com.listenit.music.ui.common.ArtworkImage
@@ -94,8 +102,10 @@ import com.listenit.music.ui.common.safeHorizontalContentPadding
 import com.listenit.music.ui.common.adaptiveContentWidth
 import com.listenit.music.ui.player.LocalMiniPlayerScrollClearance
 import com.listenit.music.ui.shell.FloatingNavDefaults
+import kotlinx.coroutines.delay
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.BorderStroke
 
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -107,9 +117,35 @@ import com.listenit.music.ui.theme.LocalLiquidGlass
 import com.listenit.music.ui.theme.liquidGlassContainerColor
 import com.listenit.music.ui.theme.liquidGlassChrome
 
-private val SearchHeaderShape = RoundedCornerShape(bottomStart = 24.dp, bottomEnd = 24.dp)
-
 private data class BrowseCategory(val name: String, val color: Color)
+
+private data class SearchVisualTheme(
+    val accent: Color,
+    val top: Color,
+    val bottom: Color,
+    val supportingText: String,
+)
+
+private fun searchVisualTheme(hour: Int): SearchVisualTheme = when (hour) {
+    in 5..11 -> SearchVisualTheme(
+        accent = Color(0xFFFFBD59),
+        top = Color(0xFF3B2B25),
+        bottom = Color(0xFF111820),
+        supportingText = "Find the sound for your morning.",
+    )
+    in 12..17 -> SearchVisualTheme(
+        accent = Color(0xFF54C7F5),
+        top = Color(0xFF173B50),
+        bottom = Color(0xFF101722),
+        supportingText = "Find your rhythm for the day.",
+    )
+    else -> SearchVisualTheme(
+        accent = Color(0xFF9B8CFF),
+        top = Color(0xFF1A1B35),
+        bottom = Color(0xFF090D17),
+        supportingText = "Slow down. Let the music take over.",
+    )
+}
 
 private val BROWSE_CATEGORIES = listOf(
     BrowseCategory("Pop", Color(0xFFC27D6E)), // Dusty terracotta
@@ -142,6 +178,23 @@ fun SearchScreen(
     val addToPlaylist = com.listenit.music.ui.player.LocalAddToPlaylist.current
     val focusManager = LocalFocusManager.current
     val liquidGlass = LocalLiquidGlass.current
+    var localHour by remember { mutableIntStateOf(java.time.LocalTime.now().hour) }
+    val visualTheme = remember(localHour) { searchVisualTheme(localHour) }
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    LaunchedEffect(Unit) {
+        while (true) {
+            delay(60_000)
+            localHour = java.time.LocalTime.now().hour
+        }
+    }
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_START) localHour = java.time.LocalTime.now().hour
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
 
     Box(
         modifier = Modifier.fillMaxSize(),
@@ -150,15 +203,8 @@ fun SearchScreen(
         Column(
             Modifier
                 .fillMaxSize()
+                .background(Brush.verticalGradient(listOf(visualTheme.top, visualTheme.bottom)))
                 .adaptiveContentWidth(maxWidth = 860.dp),
-        ) {
-        Surface(
-            shape = SearchHeaderShape,
-            color = liquidGlassContainerColor(MaterialTheme.colorScheme.surfaceContainer),
-            tonalElevation = 2.dp,
-            modifier = Modifier
-                .fillMaxWidth()
-                .liquidGlassChrome(SearchHeaderShape, liquidGlass),
         ) {
             Column(
                 modifier = Modifier
@@ -167,46 +213,89 @@ fun SearchScreen(
                         WindowInsets.safeDrawing.only(WindowInsetsSides.Top + WindowInsetsSides.Horizontal),
                     )
                     .padding(horizontal = 16.dp)
-                    .padding(top = 6.dp, bottom = 10.dp),
+                    .padding(top = 4.dp, bottom = 10.dp),
             ) {
-                // Prominent Screen Title
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(bottom = 10.dp, top = 2.dp, start = 4.dp),
+                        .padding(bottom = 4.dp, top = 2.dp),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
                     if (onBack != null) {
                         HeaderActionIcon(Icons.AutoMirrored.Filled.ArrowBack, "Back", onBack)
-                        Spacer(Modifier.width(10.dp))
+                        Spacer(Modifier.width(8.dp))
                     }
                     Text(
-                        text = "Search",
-                        style = MaterialTheme.typography.headlineMedium.copy(
-                            fontSize = 24.sp,
-                            fontWeight = FontWeight.Bold,
-                        ),
-                        color = MaterialTheme.colorScheme.onSurface,
+                        text = "TuneGlass",
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        color = Color.White,
                     )
                 }
 
-                // Top Search Input Row
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(108.dp)
+                        .clip(RoundedCornerShape(20.dp)),
+                ) {
+                    val heroResult = state.results.firstOrNull()
+                    if (!heroResult?.artworkUrl.isNullOrBlank()) {
+                        ArtworkImage(
+                            name = heroResult?.name.orEmpty(),
+                            artist = heroResult?.artist.orEmpty(),
+                            embeddedUrl = heroResult?.artworkUrl,
+                            fallbackIcon = Icons.Filled.Search,
+                            modifier = Modifier.fillMaxSize(),
+                        )
+                    }
+                    Box(
+                        Modifier
+                            .fillMaxSize()
+                            .background(
+                                Brush.horizontalGradient(
+                                    listOf(visualTheme.top.copy(alpha = 0.96f), visualTheme.top.copy(alpha = 0.46f)),
+                                ),
+                            ),
+                    )
+                    Column(
+                        modifier = Modifier.align(Alignment.CenterStart).padding(horizontal = 14.dp),
+                        verticalArrangement = Arrangement.spacedBy(0.dp),
+                    ) {
+                        Text(
+                            text = "Search your",
+                            style = MaterialTheme.typography.titleLarge.copy(fontWeight = FontWeight.Medium),
+                            color = Color.White.copy(alpha = 0.9f),
+                        )
+                        Text(
+                            text = "next vibe",
+                            style = MaterialTheme.typography.headlineLarge.copy(
+                                fontWeight = FontWeight.ExtraBold,
+                                letterSpacing = (-0.8).sp,
+                            ),
+                            color = Color.White,
+                        )
+                        Text(
+                            text = visualTheme.supportingText,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = Color.White.copy(alpha = 0.76f),
+                        )
+                    }
+                }
+
+                Spacer(Modifier.height(10.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    val pillBg = if (liquidGlass) {
-                        MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.90f)
-                    } else {
-                        MaterialTheme.colorScheme.surfaceContainerHighest
-                    }
+                    val searchShape = RoundedCornerShape(18.dp)
+                    val pillBg = Color.White.copy(alpha = if (liquidGlass) 0.12f else 0.08f)
 
                     BasicTextField(
                         value = state.query,
                         onValueChange = viewModel::setQuery,
                         singleLine = true,
                         textStyle = MaterialTheme.typography.bodyLarge.copy(
-                            color = MaterialTheme.colorScheme.onSurface,
+                            color = Color.White,
                         ),
                         cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
@@ -218,14 +307,14 @@ fun SearchScreen(
                         ),
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(46.dp),
+                            .height(50.dp),
                         decorationBox = { innerTextField ->
                             Row(
                                 modifier = Modifier
                                     .fillMaxSize()
-                                    .clip(CircleShape)
-                                    .liquidGlassChrome(CircleShape, liquidGlass)
-                                    .background(liquidGlassContainerColor(pillBg))
+                                    .clip(searchShape)
+                                    .liquidGlassChrome(searchShape, liquidGlass)
+                                    .background(pillBg)
                                     .padding(horizontal = 14.dp),
                                 verticalAlignment = Alignment.CenterVertically,
                             ) {
@@ -233,9 +322,9 @@ fun SearchScreen(
                                     imageVector = Icons.Filled.Search,
                                     contentDescription = null,
                                     tint = if (state.query.isNotEmpty()) {
-                                        MaterialTheme.colorScheme.primary
+                                        visualTheme.accent
                                     } else {
-                                        MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.70f)
+                                        Color.White.copy(alpha = 0.70f)
                                     },
                                     modifier = Modifier.size(20.dp),
                                 )
@@ -247,9 +336,9 @@ fun SearchScreen(
                                     if (state.query.isEmpty()) {
                                         Text(
                                             text = if (state.tab == SearchTab.USERS) "Search Last.fm users\u2026"
-                                            else "Artists, songs, playlists\u2026",
+                                            else "Songs, artists, albums, playlists\u2026",
                                             style = MaterialTheme.typography.bodyMedium,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.74f),
+                                            color = Color.White.copy(alpha = 0.68f),
                                             maxLines = 1,
                                             overflow = TextOverflow.Ellipsis,
                                         )
@@ -272,7 +361,7 @@ fun SearchScreen(
                                         Icon(
                                             Icons.Filled.Clear,
                                             contentDescription = "Clear",
-                                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                                tint = Color.White.copy(alpha = 0.82f),
                                             modifier = Modifier.size(18.dp),
                                         )
                                     }
@@ -284,14 +373,15 @@ fun SearchScreen(
 
                 Spacer(Modifier.height(10.dp))
 
-                // Modern Segmented Filter Pills
                 SearchFilterPills(
                     selectedTab = state.tab,
+                    selectedAll = state.allResults,
+                    onSelectAll = viewModel::setAllResults,
                     onTabSelected = viewModel::setTab,
                     liquidGlass = liquidGlass,
+                    accent = visualTheme.accent,
                 )
             }
-        }
 
         Box(Modifier.fillMaxSize().safeHorizontalContentPadding()) {
             when {
@@ -464,19 +554,62 @@ fun SearchScreen(
                                         modifier = Modifier.size(44.dp),
                                     )
                                     Spacer(Modifier.height(10.dp))
-                                    Text("No results found for \"${state.query}\"", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                    Text(
+                                        "No vibe found yet",
+                                        color = Color.White,
+                                        style = MaterialTheme.typography.titleMedium,
+                                    )
+                                    Text(
+                                        "Try another song, artist, or playlist.",
+                                        color = Color.White.copy(alpha = 0.68f),
+                                    )
                                 }
                             }
                             SearchStatus.RESULTS -> {
-                                val topResult = state.results.firstOrNull()
-                                val otherResults = if (state.results.size > 1) state.results.drop(1) else emptyList()
+                                if (state.allResults) {
+                                    SearchAllResults(
+                                        results = state.results,
+                                        currentTitle = playbackState.current?.title,
+                                        currentArtist = playbackState.current?.artist,
+                                        isPlaying = playbackState.isPlaying,
+                                        onResultClick = { item, tab ->
+                                            when (tab) {
+                                                SearchTab.ARTISTS -> onOpenArtist(item.name, item.entityId)
+                                                SearchTab.ALBUMS -> onOpenAlbum(item.name, item.artist.orEmpty(), item.entityId)
+                                                SearchTab.PLAYLISTS -> item.entityId?.let(onOpenPlaylist)
+                                                SearchTab.TRACKS, SearchTab.USERS -> viewModel.playResult(item)
+                                            }
+                                        },
+                                        onMenu = { item, tab ->
+                                            menuTarget = when (tab) {
+                                                SearchTab.TRACKS -> TrackMenuTarget.Track(item.name, item.artist.orEmpty(), item.url)
+                                                SearchTab.ARTISTS -> TrackMenuTarget.Artist(item.name, item.url)
+                                                SearchTab.ALBUMS -> TrackMenuTarget.Album(item.name, item.artist.orEmpty(), item.url)
+                                                SearchTab.PLAYLISTS, SearchTab.USERS -> null
+                                            }
+                                        },
+                                        onAddToPlaylist = { item ->
+                                            addToPlaylist(
+                                                com.listenit.music.playback.PlayableTrack(
+                                                    title = item.name,
+                                                    artist = item.artist.orEmpty(),
+                                                    album = item.subtitle,
+                                                    artworkUrl = item.artworkUrl,
+                                                    videoId = item.videoId,
+                                                ),
+                                            )
+                                        },
+                                    )
+                                } else {
+                                    val topResult = state.results.firstOrNull()
+                                    val otherResults = if (state.results.size > 1) state.results.drop(1) else emptyList()
 
-                                LazyColumn(
-                                    contentPadding = PaddingValues(
-                                        top = 8.dp,
-                                        bottom = FloatingNavDefaults.contentBottomPadding(),
-                                    ),
-                                ) {
+                                    LazyColumn(
+                                        contentPadding = PaddingValues(
+                                            top = 8.dp,
+                                            bottom = FloatingNavDefaults.contentBottomPadding(),
+                                        ),
+                                    ) {
                                     if (topResult != null && state.tab != SearchTab.USERS) {
                                         val isTopPlaying = state.tab == SearchTab.TRACKS && playbackState.isPlaying &&
                                             playbackState.current?.title.equals(topResult.name, ignoreCase = true) &&
@@ -553,6 +686,7 @@ fun SearchScreen(
                                         )
                                     }
                                 }
+                                }
                             }
                         }
                     }
@@ -568,6 +702,124 @@ fun SearchScreen(
             capabilities = TrackMenuCapabilities(showCopyActions = true, showDeleteScrobble = true),
             playbackSourceLabel = "Search",
             onDismiss = { menuTarget = null },
+        )
+    }
+}
+
+@Composable
+private fun SearchAllResults(
+    results: List<SearchResultItem>,
+    currentTitle: String?,
+    currentArtist: String?,
+    isPlaying: Boolean,
+    onResultClick: (SearchResultItem, SearchTab) -> Unit,
+    onMenu: (SearchResultItem, SearchTab) -> Unit,
+    onAddToPlaylist: (SearchResultItem) -> Unit,
+) {
+    val songs = results.filter { it.resultTab == SearchTab.TRACKS }
+    val artists = results.filter { it.resultTab == SearchTab.ARTISTS }
+    val playlists = results.filter { it.resultTab == SearchTab.PLAYLISTS }
+    val albums = results.filter { it.resultTab == SearchTab.ALBUMS }
+    val featuredSong = songs.firstOrNull()
+
+    LazyColumn(
+        contentPadding = PaddingValues(top = 8.dp, bottom = FloatingNavDefaults.contentBottomPadding()),
+    ) {
+        if (featuredSong != null) {
+            item(key = "all_featured_song") {
+                TopResultCard(
+                    item = featuredSong,
+                    tab = SearchTab.TRACKS,
+                    isPlaying = isPlaying &&
+                        currentTitle.equals(featuredSong.name, ignoreCase = true) &&
+                        (featuredSong.artist.isNullOrBlank() || currentArtist.equals(featuredSong.artist, ignoreCase = true)),
+                    onPlay = { onResultClick(featuredSong, SearchTab.TRACKS) },
+                    onMenu = { onMenu(featuredSong, SearchTab.TRACKS) },
+                )
+            }
+        }
+        searchResultSection(
+            title = "Songs",
+            tab = SearchTab.TRACKS,
+            results = songs.drop(1),
+            currentTitle = currentTitle,
+            currentArtist = currentArtist,
+            isPlaying = isPlaying,
+            onResultClick = onResultClick,
+            onMenu = onMenu,
+            onAddToPlaylist = onAddToPlaylist,
+        )
+        searchResultSection(
+            title = "Artists",
+            tab = SearchTab.ARTISTS,
+            results = artists,
+            currentTitle = currentTitle,
+            currentArtist = currentArtist,
+            isPlaying = isPlaying,
+            onResultClick = onResultClick,
+            onMenu = onMenu,
+            onAddToPlaylist = onAddToPlaylist,
+        )
+        searchResultSection(
+            title = "Playlists",
+            tab = SearchTab.PLAYLISTS,
+            results = playlists,
+            currentTitle = currentTitle,
+            currentArtist = currentArtist,
+            isPlaying = isPlaying,
+            onResultClick = onResultClick,
+            onMenu = onMenu,
+            onAddToPlaylist = onAddToPlaylist,
+        )
+        searchResultSection(
+            title = "Albums",
+            tab = SearchTab.ALBUMS,
+            results = albums,
+            currentTitle = currentTitle,
+            currentArtist = currentArtist,
+            isPlaying = isPlaying,
+            onResultClick = onResultClick,
+            onMenu = onMenu,
+            onAddToPlaylist = onAddToPlaylist,
+        )
+    }
+}
+
+private fun LazyListScope.searchResultSection(
+    title: String,
+    tab: SearchTab,
+    results: List<SearchResultItem>,
+    currentTitle: String?,
+    currentArtist: String?,
+    isPlaying: Boolean,
+    onResultClick: (SearchResultItem, SearchTab) -> Unit,
+    onMenu: (SearchResultItem, SearchTab) -> Unit,
+    onAddToPlaylist: (SearchResultItem) -> Unit,
+) {
+    if (results.isEmpty()) return
+    item(key = "${tab.name.lowercase()}_section_header") {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+            color = Color.White,
+            modifier = Modifier.padding(start = 16.dp, top = 14.dp, bottom = 4.dp),
+        )
+    }
+    items(
+        items = results,
+        key = { item -> "${tab.name}_${item.entityId ?: item.url.ifBlank { item.name + item.artist.orEmpty() }}" },
+        contentType = { "search_result_${tab.name}" },
+    ) { item ->
+        val itemIsPlaying = tab == SearchTab.TRACKS && isPlaying &&
+            currentTitle.equals(item.name, ignoreCase = true) &&
+            (item.artist.isNullOrBlank() || currentArtist.equals(item.artist, ignoreCase = true))
+        SearchResultRow(
+            item = item,
+            tab = tab,
+            isPlaying = itemIsPlaying,
+            onClick = { onResultClick(item, tab) },
+            onLongClick = { if (tab == SearchTab.TRACKS) onAddToPlaylist(item) else onMenu(item, tab) },
+            onMenu = { onMenu(item, tab) },
         )
     }
 }
@@ -638,24 +890,45 @@ private fun TopResultCard(
             }
             Spacer(Modifier.width(14.dp))
             Column(Modifier.weight(1f)) {
-                Surface(
-                    shape = RoundedCornerShape(6.dp),
-                    color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
-                    modifier = Modifier.padding(bottom = 4.dp),
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text(
-                        when (tab) {
-                            SearchTab.TRACKS -> "TOP SONG"
-                            SearchTab.ARTISTS -> "TOP ARTIST"
-                            SearchTab.ALBUMS -> "TOP ALBUM"
-                            SearchTab.PLAYLISTS -> "TOP PLAYLIST"
-                            SearchTab.USERS -> "USER"
-                        },
-                        style = MaterialTheme.typography.labelSmall,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
-                    )
+                    Surface(
+                        shape = RoundedCornerShape(6.dp),
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.15f),
+                        modifier = Modifier.padding(bottom = 4.dp),
+                    ) {
+                        Text(
+                            when (tab) {
+                                SearchTab.TRACKS -> "TOP SONG"
+                                SearchTab.ARTISTS -> "TOP ARTIST"
+                                SearchTab.ALBUMS -> "TOP ALBUM"
+                                SearchTab.PLAYLISTS -> "TOP PLAYLIST"
+                                SearchTab.USERS -> "USER"
+                            },
+                            style = MaterialTheme.typography.labelSmall,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp),
+                        )
+                    }
+                    if (tab == SearchTab.TRACKS) {
+                        Spacer(Modifier.weight(1f))
+                        IconButton(
+                            onClick = onMenu,
+                            modifier = Modifier
+                                .size(32.dp)
+                                .clip(CircleShape),
+                        ) {
+                            Icon(
+                                imageVector = Icons.Filled.MoreVert,
+                                contentDescription = "More options for ${item.name}",
+                                tint = cardContentColor,
+                                modifier = Modifier.size(20.dp),
+                            )
+                        }
+                    }
                 }
                 Text(
                     item.name,
@@ -918,8 +1191,11 @@ private fun SearchResultRow(
 @Composable
 private fun SearchFilterPills(
     selectedTab: SearchTab,
+    selectedAll: Boolean,
+    onSelectAll: () -> Unit,
     onTabSelected: (SearchTab) -> Unit,
     liquidGlass: Boolean,
+    accent: Color,
     modifier: Modifier = Modifier,
 ) {
     val tabs = listOf(
@@ -936,45 +1212,53 @@ private fun SearchFilterPills(
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
+        SearchFilterPill(
+            label = "All",
+            selected = selectedAll,
+            liquidGlass = liquidGlass,
+            accent = accent,
+            onClick = onSelectAll,
+        )
         tabs.forEach { (tab, label) ->
-            val selected = selectedTab == tab
-            val interactionSource = remember { MutableInteractionSource() }
-
-            val pillBg = when {
-                selected && liquidGlass -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.92f)
-                selected -> MaterialTheme.colorScheme.primary
-                liquidGlass -> MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.90f)
-                else -> MaterialTheme.colorScheme.surfaceContainerHighest.copy(alpha = 0.60f)
-            }
-
-            val contentColor = when {
-                selected && liquidGlass -> MaterialTheme.colorScheme.onPrimaryContainer
-                selected -> MaterialTheme.colorScheme.onPrimary
-                else -> MaterialTheme.colorScheme.onSurfaceVariant
-            }
-
-            Surface(
-                shape = CircleShape,
-                color = liquidGlassContainerColor(pillBg),
-                modifier = Modifier
-                    .clip(CircleShape)
-                    .liquidGlassChrome(CircleShape, liquidGlass)
-                    .clickable(
-                        interactionSource = interactionSource,
-                        indication = null,
-                        onClick = { onTabSelected(tab) },
-                    ),
-            ) {
-                Text(
-                    text = label,
-                    style = MaterialTheme.typography.labelLarge.copy(
-                        fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
-                    ),
-                    color = contentColor,
-                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 7.dp),
-                )
-            }
+            SearchFilterPill(
+                label = if (tab == SearchTab.TRACKS) "Songs" else label,
+                selected = !selectedAll && selectedTab == tab,
+                liquidGlass = liquidGlass,
+                accent = accent,
+                onClick = { onTabSelected(tab) },
+            )
         }
     }
 }
 
+@Composable
+private fun SearchFilterPill(
+    label: String,
+    selected: Boolean,
+    liquidGlass: Boolean,
+    accent: Color,
+    onClick: () -> Unit,
+) {
+    val interactionSource = remember { MutableInteractionSource() }
+    Surface(
+        shape = CircleShape,
+        color = if (selected) accent.copy(alpha = 0.9f) else Color.White.copy(alpha = if (liquidGlass) 0.11f else 0.07f),
+        border = BorderStroke(1.dp, if (selected) accent else Color.White.copy(alpha = 0.15f)),
+        modifier = Modifier
+            .clip(CircleShape)
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null,
+                onClick = onClick,
+            ),
+    ) {
+        Text(
+            text = label,
+            style = MaterialTheme.typography.labelLarge.copy(
+                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+            ),
+            color = if (selected) Color(0xFF10151D) else Color.White.copy(alpha = 0.82f),
+            modifier = Modifier.padding(horizontal = 15.dp, vertical = 8.dp),
+        )
+    }
+}

@@ -35,6 +35,7 @@ data class SearchResultItem(
     val subtitle: String? = null,
     val videoId: String? = null,
     val entityId: String? = null,
+    val resultTab: SearchTab? = null,
 )
 
 /**
@@ -115,7 +116,7 @@ class SearchRepository @Inject constructor(
                 val key = sessionPreferences.session.first().apiKey.ifBlank { com.listenit.music.data.network.LastFmAppCredentials.API_KEY }
                 lookupUser(key, query)
             }
-        }.filter { it.name.isNotBlank() }
+        }.filter { it.name.isNotBlank() }.map { it.copy(resultTab = tab) }
     }
 
     /** Returns the native-playable tracks behind a YT Music artist/album result. */
